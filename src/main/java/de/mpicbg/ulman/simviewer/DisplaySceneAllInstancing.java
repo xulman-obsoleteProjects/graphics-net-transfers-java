@@ -34,7 +34,6 @@ import graphics.scenery.*;
 import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
 import sc.iview.SciView;
-import sc.iview.commands.demo.ParticleDemo;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -67,9 +66,9 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			sList.add(ShaderType.VertexShader);
 			sList.add(ShaderType.FragmentShader);
 
-			refMaterials[0] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
-			refMaterials[1] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
-			refMaterials[2] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
+			refMaterials[0] = ShaderMaterial.fromClass(DisplayScene.class, sList);
+			refMaterials[1] = ShaderMaterial.fromClass(DisplayScene.class, sList);
+			refMaterials[2] = ShaderMaterial.fromClass(DisplayScene.class, sList);
 		}
 		else
 		{
