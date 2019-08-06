@@ -4,7 +4,7 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import de.mpicbg.ulman.simviewer.aux.Point;
+import de.mpicbg.ulman.simviewer.elements.Point;
 
 /**
  * Operates on a command line and recognizes a list of commands, try

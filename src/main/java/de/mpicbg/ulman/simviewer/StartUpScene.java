@@ -1,6 +1,6 @@
 package de.mpicbg.ulman.simviewer;
 
-import de.mpicbg.ulman.simviewer.aux.NetMessagesProcessor;
+import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
 
 /**
  * Opens the scenery window, starts the listening server, maintains

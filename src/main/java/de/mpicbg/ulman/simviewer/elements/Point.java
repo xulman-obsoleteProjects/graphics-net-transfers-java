@@ -1,4 +1,4 @@
-package de.mpicbg.ulman.simviewer.aux;
+package de.mpicbg.ulman.simviewer.elements;
 
 import cleargl.GLVector;
 import graphics.scenery.Node;

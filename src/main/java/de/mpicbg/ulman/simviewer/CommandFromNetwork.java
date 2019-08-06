@@ -4,7 +4,7 @@ import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import de.mpicbg.ulman.simviewer.aux.NetMessagesProcessor;
+import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
 
 /**
  * Operates on a network socket and listens for incoming messages.

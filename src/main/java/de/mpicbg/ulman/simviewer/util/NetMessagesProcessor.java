@@ -1,9 +1,12 @@
-package de.mpicbg.ulman.simviewer.aux;
+package de.mpicbg.ulman.simviewer.util;
 
 import java.util.Locale;
 import java.util.Scanner;
 
 import de.mpicbg.ulman.simviewer.DisplayScene;
+import de.mpicbg.ulman.simviewer.elements.Point;
+import de.mpicbg.ulman.simviewer.elements.Line;
+import de.mpicbg.ulman.simviewer.elements.Vector;
 
 /**
  * A class to parse the messages according the "network-protocol" and

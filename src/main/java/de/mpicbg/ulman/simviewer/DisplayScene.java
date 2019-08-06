@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import de.mpicbg.ulman.simviewer.aux.Point;
-import de.mpicbg.ulman.simviewer.aux.Line;
-import de.mpicbg.ulman.simviewer.aux.Vector;
+import de.mpicbg.ulman.simviewer.elements.Point;
+import de.mpicbg.ulman.simviewer.elements.Line;
+import de.mpicbg.ulman.simviewer.elements.Vector;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,

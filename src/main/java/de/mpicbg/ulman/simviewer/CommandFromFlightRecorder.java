@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ListIterator;
 
-import de.mpicbg.ulman.simviewer.aux.NetMessagesProcessor;
+import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
 
 /**
  * Operates on a given file that consists of messages that could be normally
