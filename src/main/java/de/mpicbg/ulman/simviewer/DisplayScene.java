@@ -184,7 +184,21 @@ public class DisplayScene extends SceneryBase implements Runnable
 		sList.add(ShaderType.FragmentShader);
 
 		Material mm = ShaderMaterial.fromClass(DisplayScene.class, sList);
+		mm.setAmbient(new GLVector(1.0f,3));
+		mm.setSpecular(new GLVector(1.0f,3));
+		mm.setDiffuse(new GLVector(1.0f,0.6f,0.6f));
+
+		//master point
+		refPointNode = new Sphere(1.0f, 12);
+		refPointNode.setMaterial(mm);
+		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
+		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refPointNode);
 	}
+
+	//instancing:
+	private Sphere refPointNode;
+
 
 	/** additionally promotes SimViewer's own hot keys;
 	    call this method only when the Scenery is ready... */
@@ -484,7 +498,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refPointNode.getInstances().remove(n.node);
 				pointNodes.remove(ID);
 			}
 			return;
@@ -494,22 +509,32 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new point: adding
-			n = new Point( new Sphere(1.0f, 12) );
-			n.node.setPosition(n.centre);
-			n.node.setScale(n.radius);
+			n = new Point( new Node() );
+			final Node nn = n.node;
+
+			//define the point
+			nn.setMaterial(refPointNode.getMaterial());
+			nn.setScale(n.radius);
+			nn.setPosition(n.centre);
+			final GLVector col = new GLVector(1.0f,0.0f,0.f, 1.0f);
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", () -> col);
+			nn.setParent(scene);
+			refPointNode.getInstances().add(nn);
 
 			pointNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,spheresShown);
 		}
 
+		//TODO:
+		// if color is changed, became instance of another master (that of the right color)
+
 		//now update the point with the current data
 		n.update(p);
-		n.node.setMaterial(materials[n.color % materials.length]);
-
 		n.lastSeenTick = tickCounter;
-
-		this.nodeSetNeedsUpdate(n.node);
+		n.node.updateWorld(false,false);
 	 }
 	}
 
@@ -650,7 +675,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(p.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refPointNode.getInstances().remove(p.node);
 				i.remove();
 			}
 		}
