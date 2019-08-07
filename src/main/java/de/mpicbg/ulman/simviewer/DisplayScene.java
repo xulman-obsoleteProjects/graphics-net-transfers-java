@@ -3,12 +3,15 @@ package de.mpicbg.ulman.simviewer;
 import cleargl.GLVector;
 import graphics.scenery.*;
 import graphics.scenery.backends.Renderer;
+import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
 import graphics.scenery.controls.InputHandler;
 import org.scijava.ui.behaviour.ClickBehaviour;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import de.mpicbg.ulman.simviewer.elements.Point;
@@ -173,6 +176,14 @@ public class DisplayScene extends SceneryBase implements Runnable
 		ToggleFixedLights(); //just the front ramp
 		ToggleFixedLights(); //just the rear ramp
 		ToggleFixedLights(); //both ramps
+
+
+		//instancing:
+		final List<ShaderType> sList = new ArrayList<>(2);
+		sList.add(ShaderType.VertexShader);
+		sList.add(ShaderType.FragmentShader);
+
+		Material mm = ShaderMaterial.fromClass(DisplayScene.class, sList);
 	}
 
 	/** additionally promotes SimViewer's own hot keys;
