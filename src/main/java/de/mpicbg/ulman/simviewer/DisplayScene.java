@@ -17,6 +17,7 @@ import java.util.Iterator;
 import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
+import de.mpicbg.ulman.simviewer.elements.VectorSH;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -209,24 +210,34 @@ public class DisplayScene extends SceneryBase implements Runnable
 		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refLineNode);
 
-		//define a master instance vector (as a single slim Cylinder for now)
+		//define a master instance vector as two instances (of the same material):
+		//the vector shaft (slim Cylinder) and head (Cone)
 		mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
 		mm.setCullingMode(CullingMode.None);
 		mm.setAmbient(new GLVector(1.0f,3));
 		mm.setSpecular(new GLVector(1.0f,3));
 		mm.setDiffuse(new GLVector(0.6f,0.6f,1.0f));
 		//
-		refVectorNode = new Cylinder(0.5f, 1.0f, 4);
-		refVectorNode.setMaterial(mm);
-		refVectorNode.getInstancedProperties().put("ModelMatrix", refVectorNode::getModel);
-		refVectorNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
-		scene.addChild(refVectorNode);
+		refVectorNode_Shaft = new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
+		refVectorNode_Shaft.setMaterial(mm);
+		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
+		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refVectorNode_Shaft);
+		//
+		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
+		refVectorNode_Head.setMaterial(mm);
+		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
+		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refVectorNode_Head);
 	}
 
 	//instancing, master instances:
 	private Sphere   refPointNode;
 	private Cylinder refLineNode;
-	private Cylinder refVectorNode;
+	private Cylinder refVectorNode_Shaft;
+	private Cone     refVectorNode_Head;
+	private final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
+	private final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
 	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 
 
@@ -510,7 +521,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 	/** these lines are registered with the display, but not necessarily always visible */
 	private final Map<Integer,Line> lineNodes = new HashMap<>();
 	/** these vectors are registered with the display, but not necessarily always visible */
-	private final Map<Integer,Vector> vectorNodes = new HashMap<>();
+	private final Map<Integer,VectorSH> vectorNodes = new HashMap<>();
 
 
 	/** this is designed (yet only) for SINGLE-THREAD application! */
@@ -629,7 +640,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 synchronized (lockOnChangingSceneContent)
 	 {
 		//attempt to retrieve node of this ID
-		Vector n = vectorNodes.get(ID);
+		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
 		if (v.color < 0)
@@ -637,7 +648,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 			if (n != null)
 			{
 				//scene.removeChild(n.node); -- was never added to the scene
-				refVectorNode.getInstances().remove(n.node);
+				refVectorNode_Shaft.getInstances().remove(n.node);
+				refVectorNode_Head.getInstances().remove(n.nodeHead);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -646,34 +658,48 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//shall we create a new vector?
 		if (n == null)
 		{
-			//new vector: adding it already in the desired shape
-			n = new Vector( new Node() );
-			final Node nn = n.node;
+			//new vector: adding
+			n = new VectorSH( vec_headLengthRatio, new Node(),new Node() );
+			final Node ns = n.node;
+			final Node nh = n.nodeHead;
 
 			//define the vector
-			nn.setMaterial(refVectorNode.getMaterial());
-			nn.setScale(n.auxScale);
-			nn.setPosition(n.base);
+			ns.setMaterial(refVectorNode_Shaft.getMaterial());
+			ns.setScale(n.auxScale);
+			ns.setPosition(n.base);
+
+			nh.setMaterial(refVectorNode_Head.getMaterial());
+			nh.setScale(n.auxScale);
+			nh.setPosition(n.auxHeadBase);
+
 			final GLVector col = new GLVector(0.0f,1.0f,0.f, 1.0f); //TODO
 
-			//spawn another instance
-			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
-			nn.getInstancedProperties().put("Color", () -> col);
-			nn.setParent(scene);
-			refVectorNode.getInstances().add(nn);
+			//spawn another instances
+			ns.getInstancedProperties().put("ModelMatrix", ns::getWorld);
+			ns.getInstancedProperties().put("Color", () -> col);
+			ns.setParent(scene);
+			refVectorNode_Shaft.getInstances().add(ns);
+
+			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
+			nh.getInstancedProperties().put("Color", () -> col);
+			nh.setParent(scene);
+			refVectorNode_Head.getInstances().add(nh);
 
 			vectorNodes.put(ID,n);
-			showOrHideMe(ID,n.node,vectorsShown);
+			n.nodeHead.setVisible( showOrHideMe(ID,n.node,vectorsShown) );
+			//NB: sets the same visibility to both nodes
 		}
 
 		//set the new absolute orientation
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		n.nodeHead.setRotation(n.node.getRotation());
 
 		//finally, update the vector with the current data
 		n.update(v);
 		n.lastSeenTick = tickCounter;
 		n.node.updateWorld(false,false);
+		n.nodeHead.updateWorld(false,false);
 	 }
 	}
 
@@ -731,12 +757,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 		i = vectorNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final Vector v = vectorNodes.get(i.next());
+			final VectorSH v = vectorNodes.get(i.next());
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
 				//scene.removeChild(v.node); -- was never added to the scene
-				refVectorNode.getInstances().remove(v.node);
+				refVectorNode_Shaft.getInstances().remove(v.node);
+				refVectorNode_Head.getInstances().remove(v.nodeHead);
 				i.remove();
 			}
 		}
