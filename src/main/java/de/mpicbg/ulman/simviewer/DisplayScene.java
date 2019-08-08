@@ -546,7 +546,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 			nn.setMaterial(refPointNode.getMaterial());
 			nn.setScale(n.radius);
 			nn.setPosition(n.centre);
-			final GLVector col = new GLVector(1.0f,0.0f,0.f, 1.0f);
+			final GLVector col = new GLVector(1.0f,0.0f,0.f, 1.0f); //TODO
 
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
@@ -557,9 +557,6 @@ public class DisplayScene extends SceneryBase implements Runnable
 			pointNodes.put(ID,n);
 			showOrHideMe(ID,n.node,spheresShown);
 		}
-
-		//TODO:
-		// if color is changed, became instance of another master (that of the right color)
 
 		//now update the point with the current data
 		n.update(p);
@@ -583,7 +580,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refLineNode.getInstances().remove(n.node);
 				lineNodes.remove(ID);
 			}
 			return;
@@ -593,26 +591,33 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new line: adding
-			n = new Line( new graphics.scenery.Line(4) );
-			n.node.setEdgeWidth(3.0f);
-			//no setPosition(), no setScale()
+			n = new Line( new Node() );
+			final Node nn = n.node;
+
+			//define the line
+			nn.setMaterial(refLineNode.getMaterial());
+			nn.setScale(n.auxScale);
+			nn.setPosition(n.base);
+			final GLVector col = new GLVector(0.0f,1.0f,0.f, 1.0f); //TODO
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", () -> col);
+			nn.setParent(scene);
+			refLineNode.getInstances().add(nn);
 
 			lineNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,linesShown);
 		}
 
-		//now update the line with the current data
-		n.update(l);
-		n.node.clearPoints();
-		n.node.addPoint(zeroGLvec);
-		n.node.addPoint(n.posA);
-		n.node.addPoint(n.posB);
-		n.node.addPoint(zeroGLvec);
-		//NB: surrounded by two mandatory fake points that are never displayed
-		n.node.setMaterial(materials[n.color % materials.length]);
+		//set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
 
+		//finally, update the line with the current data
+		n.update(l);
 		n.lastSeenTick = tickCounter;
+		n.node.updateWorld(false,false);
 	 }
 	}
 
@@ -631,7 +636,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refVectorNode.getInstances().remove(n.node);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -641,34 +647,33 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new vector: adding it already in the desired shape
-			n = new Vector( new Arrow(v.vector) );
-			n.node.setEdgeWidth(3.0f);
-			n.node.setPosition(n.base);
-			n.node.setScale(vectorsStretchGLvec);
+			n = new Vector( new Node() );
+			final Node nn = n.node;
 
-			//(here's the "adding it" part)
+			//define the vector
+			nn.setMaterial(refVectorNode.getMaterial());
+			nn.setScale(n.auxScale);
+			nn.setPosition(n.base);
+			final GLVector col = new GLVector(0.0f,1.0f,0.f, 1.0f); //TODO
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", () -> col);
+			nn.setParent(scene);
+			refVectorNode.getInstances().add(nn);
+
 			vectorNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,vectorsShown);
 		}
-		else
-		{
-			//existing vector: update it to the desired shape
-			n.node.reshape(v.vector);
-		}
-		//NB: n.vector is actually not used here!
-		//    (as Arrow.reshape() makes its own copy of
-		//     vector's shape, and we use v.vector here
-		//     to shape it; no reference to n.vector is
-		//     required and kept in the Arrow story)
-		//
-		//update the arrow with (at least) the current 'base' position
+
+		//set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+
+		//finally, update the vector with the current data
 		n.update(v);
-		n.node.setMaterial(materials[n.color % materials.length]);
-
 		n.lastSeenTick = tickCounter;
-
-		this.nodeSetNeedsUpdate(n.node);
+		n.node.updateWorld(false,false);
 	 }
 	}
 
@@ -698,14 +703,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//NB: HashMap may be modified while being swept through only via iterator
 		//    (and iterator must remove the elements actually)
 		Iterator<Integer> i = pointNodes.keySet().iterator();
-
 		while (i.hasNext())
 		{
 			final Point p = pointNodes.get(i.next());
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				//scene.removeChild(n.node); -- was never added to the scene
+				//scene.removeChild(p.node); -- was never added to the scene
 				refPointNode.getInstances().remove(p.node);
 				i.remove();
 			}
@@ -718,7 +722,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 			if (l.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(l.node);
+				//scene.removeChild(l.node); -- was never added to the scene
+				refLineNode.getInstances().remove(l.node);
 				i.remove();
 			}
 		}
@@ -730,7 +735,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(v.node);
+				//scene.removeChild(v.node); -- was never added to the scene
+				refVectorNode.getInstances().remove(v.node);
 				i.remove();
 			}
 		}
