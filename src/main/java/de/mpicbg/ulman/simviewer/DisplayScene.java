@@ -183,21 +183,50 @@ public class DisplayScene extends SceneryBase implements Runnable
 		sList.add(ShaderType.VertexShader);
 		sList.add(ShaderType.FragmentShader);
 
-		Material mm = ShaderMaterial.fromClass(DisplayScene.class, sList);
+		//define a master instance point (Sphere)
+		Material mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		mm.setCullingMode(CullingMode.None);
 		mm.setAmbient(new GLVector(1.0f,3));
 		mm.setSpecular(new GLVector(1.0f,3));
 		mm.setDiffuse(new GLVector(1.0f,0.6f,0.6f));
-
-		//master point
+		//
 		refPointNode = new Sphere(1.0f, 12);
 		refPointNode.setMaterial(mm);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refPointNode);
+
+		//define a master instance line
+		mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		mm.setCullingMode(CullingMode.None);
+		mm.setAmbient(new GLVector(1.0f,3));
+		mm.setSpecular(new GLVector(1.0f,3));
+		mm.setDiffuse(new GLVector(0.6f,1.0f,0.6f));
+		//
+		refLineNode = new Cylinder(0.3f, 1.0f, 4);
+		refLineNode.setMaterial(mm);
+		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
+		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refLineNode);
+
+		//define a master instance vector (as a single slim Cylinder for now)
+		mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		mm.setCullingMode(CullingMode.None);
+		mm.setAmbient(new GLVector(1.0f,3));
+		mm.setSpecular(new GLVector(1.0f,3));
+		mm.setDiffuse(new GLVector(0.6f,0.6f,1.0f));
+		//
+		refVectorNode = new Cylinder(0.5f, 1.0f, 4);
+		refVectorNode.setMaterial(mm);
+		refVectorNode.getInstancedProperties().put("ModelMatrix", refVectorNode::getModel);
+		refVectorNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refVectorNode);
 	}
 
-	//instancing:
-	private Sphere refPointNode;
+	//instancing, master instances:
+	private Sphere   refPointNode;
+	private Cylinder refLineNode;
+	private Cylinder refVectorNode;
 	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 
 
