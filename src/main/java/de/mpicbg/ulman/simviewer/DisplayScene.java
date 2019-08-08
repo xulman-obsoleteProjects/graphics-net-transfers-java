@@ -198,6 +198,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 	//instancing:
 	private Sphere refPointNode;
+	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 
 
 	/** additionally promotes SimViewer's own hot keys;
@@ -367,8 +368,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 			axesData[2].setMaterial(materials[3]);
 
 			//set orientation for x,z axes
-			ReOrientNode(axesData[0],new GLVector(0.0f,1.0f,0.0f),new GLVector(1.0f,0.0f,0.0f));
-			ReOrientNode(axesData[2],new GLVector(0.0f,1.0f,0.0f),new GLVector(0.0f,0.0f,1.0f));
+			ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+			ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
 
 			//place all axes into the scene centre
 			final GLVector centre = new GLVector(
