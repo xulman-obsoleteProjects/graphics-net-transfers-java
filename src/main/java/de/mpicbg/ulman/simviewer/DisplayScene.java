@@ -1068,12 +1068,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
-	/**
-	Rotates the node such that its orientation (whatever it is for the node, e.g.
-	the axis of rotational symmetry in a cylinder) given with _normalized_
-	currentNormalizedOrientVec will match the new orientation newOrientVec.
-	The normalized variant of newOrientVec will be stored into the currentNormalizedOrientVec.
-	*/
+	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
+	    the axis of rotational symmetry in a cylinder) given with _normalized_
+	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
 	public
 	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
@@ -1105,6 +1102,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 		//System.out.println("rot axis=("+tmpVec.x()+","+tmpVec.y()+","+tmpVec.z()
 		//                   +"), rot angle="+rotAngle+" rad");
+	}
+
+	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
+	    will be stored into the currentNormalizedOrientVec. */
+	public
+	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
+	                  final GLVector currentNormalizedOrientVec,
+	                  final GLVector newOrientVec)
+	{
+		ReOrientNode(node, currentNormalizedOrientVec, newOrientVec);
 
 		//update the current orientation
 		currentNormalizedOrientVec.minusAssign(currentNormalizedOrientVec);
