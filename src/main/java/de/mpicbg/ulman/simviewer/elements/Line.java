@@ -1,28 +1,34 @@
 package de.mpicbg.ulman.simviewer.elements;
 
 import cleargl.GLVector;
+import graphics.scenery.Node;
 
-/** corresponds to one element that simulator's DrawLine() can send */
-public class Line
+/** corresponds to one element that simulator's DrawLine() can send;
+    graphically, line is essentially a vector without an arrow head */
+public class Line extends Vector
 {
-	public Line()                              { node = null; }
-	public Line(final graphics.scenery.Line l) { node = l; }
+	public Line()             { super(); }    //without connection to Scenery
+	public Line(final Node l) { super(l); }   //  with  connection to Scenery
 
-	public final graphics.scenery.Line node;
-	public final GLVector posA = new GLVector(0.f,3);
-	public final GLVector posB = new GLVector(0.f,3);
-	public int color;
+	/** converts a line, given via its end positions, into a vector-like representation */
+	public void reset(final GLVector posA, final GLVector posB, final int color)
+	{
+		//essentially supplies the functionality of the Vector::update(),
+		//difference is in the semantics of the input
+		base.set(0, posA.x());
+		base.set(1, posA.y());
+		base.set(2, posA.z());
+		vector.set(0, posB.x()-posA.x());
+		vector.set(1, posB.y()-posA.y());
+		vector.set(2, posB.z()-posA.z());
+		this.color = color;
 
-	public int lastSeenTick = 0;
+		//also update the vector's auxScale:
+		updateAuxAttribs();
+	}
 
 	public void update(final Line l)
 	{
-		posA.set(0, l.posA.x());
-		posA.set(1, l.posA.y());
-		posA.set(2, l.posA.z());
-		posB.set(0, l.posB.x());
-		posB.set(1, l.posB.y());
-		posB.set(2, l.posB.z());
-		color = l.color;
+		super.update(l);
 	}
 }

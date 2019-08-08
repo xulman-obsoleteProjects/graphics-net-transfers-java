@@ -7,7 +7,7 @@ import graphics.scenery.Node;
 public class Point
 {
 	public Point()             { node = null; }   //without connection to Scenery
-	public Point(final Node n) { node = n; }      //  with  connection to Scenery
+	public Point(final Node p) { node = p; }      //  with  connection to Scenery
 
 	public final Node node;
 	public final GLVector centre = new GLVector(0.f,3);
