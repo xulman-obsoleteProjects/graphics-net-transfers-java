@@ -879,6 +879,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 		//...and rescale all vectors presently existing in the system
 		vectorNodes.values().forEach( n -> n.node.setScale(vectorsStretchGLvec) );
+		//TODO: update every vector's auxScale and trigger its updateWorld()
 	 }
 	}
 
