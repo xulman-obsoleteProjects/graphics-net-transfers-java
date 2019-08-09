@@ -74,8 +74,6 @@ public class NetMessagesProcessor
 		s.next();
 		final int N = s.nextInt();
 
-		if (N > 10) scene.suspendNodesUpdating();
-
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
 		{
@@ -112,8 +110,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -128,8 +124,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -169,8 +163,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -185,8 +177,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -226,8 +216,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
