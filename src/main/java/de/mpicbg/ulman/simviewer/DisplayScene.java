@@ -794,9 +794,6 @@ public class DisplayScene extends SceneryBase implements Runnable
 		} );
 	 }
 	}
-
-	/** shortcut zero vector to prevent from coding "new GLVector(0.f,3)" where needed */
-	private final GLVector zeroGLvec = new GLVector(0.f,3);
 	//----------------------------------------------------------------------------
 
 
