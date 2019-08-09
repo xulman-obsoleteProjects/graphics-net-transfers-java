@@ -50,7 +50,7 @@ public class Vector
 	public int color;
 
 	/** object's color in the RGB format */
-	public final GLVector colorRGB = new GLVector(0.8f,3);
+	public final GLVector colorRGB = new GLVector(0.2f,1.0f,0.2f,1.0f);
 	public GLVector getColorRGB() { return colorRGB; }
 
 	public int lastSeenTick = 0;
