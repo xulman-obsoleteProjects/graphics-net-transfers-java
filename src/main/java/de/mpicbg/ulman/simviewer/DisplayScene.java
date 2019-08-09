@@ -650,14 +650,14 @@ public class DisplayScene extends SceneryBase implements Runnable
 			showOrHideMe(ID,n.node,linesShown);
 		}
 
-		//set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
-
-		//finally, update the line with the current data
+		//update the line with the current data
 		n.update(l);
 		n.lastSeenTick = tickCounter;
-		n.node.updateWorld(false,false);
+
+		//finally, set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
+		//NB: this triggers n.node.updateWorld() automatically
 	 }
 	}
 
@@ -716,16 +716,15 @@ public class DisplayScene extends SceneryBase implements Runnable
 			showOrHideMeForVectorSH(ID);
 		}
 
-		//set the new absolute orientation
+		//update the vector with the current data
+		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
+		n.lastSeenTick = tickCounter;
+
+		//finally, set the new absolute orientation
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
-
-		//finally, update the vector with the current data
-		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
-		n.lastSeenTick = tickCounter;
-		n.node.updateWorld(false,false);
-		n.nodeHead.updateWorld(false,false);
+		//NB: this triggers n.nodes.updateWorld() automatically
 	 }
 	}
 
