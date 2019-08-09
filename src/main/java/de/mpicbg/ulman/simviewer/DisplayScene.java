@@ -686,8 +686,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 			refVectorNode_Head.getInstances().add(nh);
 
 			vectorNodes.put(ID,n);
-			n.nodeHead.setVisible( showOrHideMe(ID,n.node,vectorsShown) );
-			//NB: sets the same visibility to both nodes
+			showOrHideMeForVectorSH(ID);
 		}
 
 		//set the new absolute orientation
@@ -951,7 +950,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.g_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.g_Mode;
 	 }
@@ -970,7 +970,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return cellDebugShown;
 	 }
@@ -1016,7 +1017,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.G_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.G_Mode;
 	 }
@@ -1035,7 +1037,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return generalDebugShown;
 	 }
@@ -1108,6 +1111,17 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 		if (n != null) n.setVisible(vis);
 		return vis;
+	}
+
+	private
+	void showOrHideMeForVectorSH(final int ID)
+	{
+		final VectorSH v = vectorNodes.get(ID);
+		if (v == null)
+			throw new RuntimeException("Invalid vector ID given (ID="+ID+")");
+
+		v.nodeHead.setVisible( showOrHideMe(ID,v.node,vectorsShown) );
+		//NB: sets the same visibility to both nodes, see few lines above
 	}
 	//----------------------------------------------------------------------------
 
