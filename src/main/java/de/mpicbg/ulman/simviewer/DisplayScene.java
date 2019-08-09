@@ -559,11 +559,10 @@ public class DisplayScene extends SceneryBase implements Runnable
 			nn.setMaterial(refPointNode.getMaterial());
 			nn.setScale(n.radius);
 			nn.setPosition(n.centre);
-			final GLVector col = new GLVector(1.0f,0.0f,0.f, 1.0f); //TODO
 
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
-			nn.getInstancedProperties().put("Color", () -> col);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
 			nn.setParent(scene);
 			refPointNode.getInstances().add(nn);
 
@@ -611,11 +610,10 @@ public class DisplayScene extends SceneryBase implements Runnable
 			nn.setMaterial(refLineNode.getMaterial());
 			nn.setScale(n.auxScale);
 			nn.setPosition(n.base);
-			final GLVector col = new GLVector(0.0f,1.0f,0.f, 1.0f); //TODO
 
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
-			nn.getInstancedProperties().put("Color", () -> col);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
 			nn.setParent(scene);
 			refLineNode.getInstances().add(nn);
 
@@ -674,16 +672,14 @@ public class DisplayScene extends SceneryBase implements Runnable
 			nh.setScale(n.auxScale);
 			nh.setPosition(n.auxHeadBase);
 
-			final GLVector col = new GLVector(0.0f,1.0f,0.f, 1.0f); //TODO
-
 			//spawn another instances
 			ns.getInstancedProperties().put("ModelMatrix", ns::getWorld);
-			ns.getInstancedProperties().put("Color", () -> col);
+			ns.getInstancedProperties().put("Color", n::getColorRGB);
 			ns.setParent(scene);
 			refVectorNode_Shaft.getInstances().add(ns);
 
 			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
-			nh.getInstancedProperties().put("Color", () -> col);
+			nh.getInstancedProperties().put("Color", n::getColorRGB);
 			nh.setParent(scene);
 			refVectorNode_Head.getInstances().add(nh);
 

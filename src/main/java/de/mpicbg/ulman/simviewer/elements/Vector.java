@@ -16,7 +16,13 @@ public class Vector
 	public final Node node;
 	public final GLVector base   = new GLVector(0.f,3);
 	public final GLVector vector = new GLVector(0.f,3);
+
+	/** object's color as an index in a color palette */
 	public int color;
+
+	/** object's color in the RGB format */
+	public final GLVector colorRGB = new GLVector(0.8f,3);
+	public GLVector getColorRGB() { return colorRGB; }
 
 	public int lastSeenTick = 0;
 
@@ -54,7 +60,11 @@ public class Vector
 		vector.set(0, v.vector.x());
 		vector.set(1, v.vector.y());
 		vector.set(2, v.vector.z());
+
 		color = v.color;
+		colorRGB.set(0, v.colorRGB.x());
+		colorRGB.set(1, v.colorRGB.y());
+		colorRGB.set(2, v.colorRGB.z());
 
 		applyScale(scale);
 	}
