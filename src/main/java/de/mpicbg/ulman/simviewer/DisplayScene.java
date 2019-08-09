@@ -659,7 +659,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new vector: adding
-			n = new VectorSH( vec_headLengthRatio, new Node(),new Node() );
+			n = new VectorSH( new Node(),new Node() );
 			final Node ns = n.node;
 			final Node nh = n.nodeHead;
 
@@ -696,7 +696,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 		n.nodeHead.setRotation(n.node.getRotation());
 
 		//finally, update the vector with the current data
-		n.update(v);
+		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
 		n.lastSeenTick = tickCounter;
 		n.node.updateWorld(false,false);
 		n.nodeHead.updateWorld(false,false);
