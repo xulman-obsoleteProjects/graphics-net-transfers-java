@@ -50,7 +50,25 @@ public class DisplayScene extends SceneryBase implements Runnable
 		(materials[4] = new Material()).setDiffuse( new GLVector(0.0f, 1.0f, 1.0f) );
 		(materials[5] = new Material()).setDiffuse( new GLVector(1.0f, 0.0f, 1.0f) );
 		(materials[6] = new Material()).setDiffuse( new GLVector(1.0f, 1.0f, 0.0f) );
+		//
 		for (Material m : materials)
+		{
+			m.setCullingMode(CullingMode.None);
+			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
+			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+		}
+
+		//also init materials of the master instances
+		final List<ShaderType> sList = new ArrayList<>(2);
+		sList.add(ShaderType.VertexShader);
+		sList.add(ShaderType.FragmentShader);
+
+		refMaterials = new Material[3];
+		refMaterials[0] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		refMaterials[1] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		refMaterials[2] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		//
+		for (Material m : refMaterials)
 		{
 			m.setCullingMode(CullingMode.None);
 			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
@@ -180,52 +198,33 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 
 		//instancing:
-		final List<ShaderType> sList = new ArrayList<>(2);
-		sList.add(ShaderType.VertexShader);
-		sList.add(ShaderType.FragmentShader);
-
 		//define a master instance point (Sphere)
-		Material mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
-		mm.setCullingMode(CullingMode.None);
-		mm.setAmbient(new GLVector(1.0f,3));
-		mm.setSpecular(new GLVector(1.0f,3));
-		mm.setDiffuse(new GLVector(1.0f,0.6f,0.6f));
-		//
+		refMaterials[0].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
 		refPointNode = new Sphere(1.0f, 12);
-		refPointNode.setMaterial(mm);
+		refPointNode.setMaterial(refMaterials[0]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refPointNode);
 
 		//define a master instance line
-		mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
-		mm.setCullingMode(CullingMode.None);
-		mm.setAmbient(new GLVector(1.0f,3));
-		mm.setSpecular(new GLVector(1.0f,3));
-		mm.setDiffuse(new GLVector(0.6f,1.0f,0.6f));
-		//
+		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
 		refLineNode = new Cylinder(0.3f, 1.0f, 4);
-		refLineNode.setMaterial(mm);
+		refLineNode.setMaterial(refMaterials[1]);
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refLineNode);
 
 		//define a master instance vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
-		mm = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
-		mm.setCullingMode(CullingMode.None);
-		mm.setAmbient(new GLVector(1.0f,3));
-		mm.setSpecular(new GLVector(1.0f,3));
-		mm.setDiffuse(new GLVector(0.6f,0.6f,1.0f));
-		//
+		refMaterials[2].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
 		refVectorNode_Shaft = new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
-		refVectorNode_Shaft.setMaterial(mm);
+		refVectorNode_Shaft.setMaterial(refMaterials[2]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refVectorNode_Shaft);
 		//
 		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
-		refVectorNode_Head.setMaterial(mm);
+		refVectorNode_Head.setMaterial(refMaterials[2]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refVectorNode_Head);
@@ -239,6 +238,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	private final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
 	private final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
 	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
+
+	/** materials used by the master instances: 0-point,1-line,2-vector */
+	final Material[] refMaterials;
 
 
 	/** additionally promotes SimViewer's own hot keys;
@@ -1050,12 +1052,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 	{
 		for (Material m : materials)
 			m.setCullingMode(CullingMode.Front);
+		for (Material m : refMaterials)
+			m.setCullingMode(CullingMode.Front);
 	}
 
 	public
 	void DisableFrontFaceCulling()
 	{
 		for (Material m : materials)
+			m.setCullingMode(CullingMode.None);
+		for (Material m : refMaterials)
 			m.setCullingMode(CullingMode.None);
 	}
 	//----------------------------------------------------------------------------
