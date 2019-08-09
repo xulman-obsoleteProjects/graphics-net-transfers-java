@@ -2,14 +2,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-	<!--
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
 		<version>27.0.1</version>
 		<relativePath />
 	</parent>
-	-->
 
 	<groupId>de.mpicbg.ulman</groupId>
 	<artifactId>SimViewer</artifactId>
@@ -84,6 +82,7 @@
 		<license.projectName>SimViewer</license.projectName>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<package-name>de.mpicbg.ulman.simviewer</package-name>
 	</properties>
 
 	<repositories>
@@ -110,6 +109,19 @@
 			<groupId>sc.iview</groupId>
 			<artifactId>sciview</artifactId>
 			<version>0.2.0-beta-2-SNAPSHOT</version>
+
+			<exclusions>
+				<exclusion>
+					<groupId>net.coremem</groupId>
+					<artifactId>CoreMem</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>graphics.scenery</groupId>
+			<artifactId>scenery</artifactId>
+			<version>5b86e130</version>
 		</dependency>
 	</dependencies>
 </project>
