@@ -3,7 +3,10 @@ package de.mpicbg.ulman.simviewer.elements;
 import cleargl.GLVector;
 import graphics.scenery.Node;
 
-/** corresponds to one element that simulator's DrawPoint() can send */
+/** Corresponds to one element that simulator's DrawPoint() can send.
+    The class governs all necessary pieces of information to display
+    a point/sphere, and the Scenery's Nodes are pointed inside this class
+    to (re)fetch the actual display data/instructions. */
 public class Point
 {
 	public Point()             { node = null; }   //without connection to Scenery

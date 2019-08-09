@@ -3,8 +3,11 @@ package de.mpicbg.ulman.simviewer.elements;
 import cleargl.GLVector;
 import graphics.scenery.Node;
 
-/** corresponds to one element that simulator's DrawLine() can send;
-    graphically, line is essentially a vector without an arrow head */
+/** Corresponds to one element that simulator's DrawLine() can send;
+    graphically, line is essentially a vector without an arrow head.
+    The class governs all necessary pieces of information to display
+    the line, and the Scenery's Nodes are pointed inside this class
+    to (re)fetch the actual display data/instructions. */
 public class Line extends Vector
 {
 	public Line()             { super(); }    //without connection to Scenery
@@ -24,7 +27,7 @@ public class Line extends Vector
 		this.color = color;
 
 		//also update the vector's auxScale:
-		updateAuxAttribs();
+		applyScale(1f);
 	}
 
 	public void update(final Line l)
