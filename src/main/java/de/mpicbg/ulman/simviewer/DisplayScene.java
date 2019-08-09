@@ -17,6 +17,7 @@ import java.util.Iterator;
 import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
+import de.mpicbg.ulman.simviewer.elements.VectorSH;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -49,7 +50,25 @@ public class DisplayScene extends SceneryBase implements Runnable
 		(materials[4] = new Material()).setDiffuse( new GLVector(0.0f, 1.0f, 1.0f) );
 		(materials[5] = new Material()).setDiffuse( new GLVector(1.0f, 0.0f, 1.0f) );
 		(materials[6] = new Material()).setDiffuse( new GLVector(1.0f, 1.0f, 0.0f) );
+		//
 		for (Material m : materials)
+		{
+			m.setCullingMode(CullingMode.None);
+			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
+			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+		}
+
+		//also init materials of the master instances
+		final List<ShaderType> sList = new ArrayList<>(2);
+		sList.add(ShaderType.VertexShader);
+		sList.add(ShaderType.FragmentShader);
+
+		refMaterials = new Material[3];
+		refMaterials[0] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		refMaterials[1] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		refMaterials[2] = ShaderMaterial.Companion.fromClass(DisplayScene.class, sList);
+		//
+		for (Material m : refMaterials)
 		{
 			m.setCullingMode(CullingMode.None);
 			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
@@ -179,25 +198,49 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 
 		//instancing:
-		final List<ShaderType> sList = new ArrayList<>(2);
-		sList.add(ShaderType.VertexShader);
-		sList.add(ShaderType.FragmentShader);
-
-		Material mm = ShaderMaterial.fromClass(DisplayScene.class, sList);
-		mm.setAmbient(new GLVector(1.0f,3));
-		mm.setSpecular(new GLVector(1.0f,3));
-		mm.setDiffuse(new GLVector(1.0f,0.6f,0.6f));
-
-		//master point
+		//define a master instance point (Sphere)
+		refMaterials[0].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
 		refPointNode = new Sphere(1.0f, 12);
-		refPointNode.setMaterial(mm);
+		refPointNode.setMaterial(refMaterials[0]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		scene.addChild(refPointNode);
+
+		//define a master instance line
+		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
+		refLineNode = new Cylinder(0.3f, 1.0f, 4);
+		refLineNode.setMaterial(refMaterials[1]);
+		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
+		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refLineNode);
+
+		//define a master instance vector as two instances (of the same material):
+		//the vector shaft (slim Cylinder) and head (Cone)
+		refMaterials[2].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
+		refVectorNode_Shaft = new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
+		refVectorNode_Shaft.setMaterial(refMaterials[2]);
+		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
+		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refVectorNode_Shaft);
+		//
+		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
+		refVectorNode_Head.setMaterial(refMaterials[2]);
+		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
+		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		scene.addChild(refVectorNode_Head);
 	}
 
-	//instancing:
-	private Sphere refPointNode;
+	//instancing, master instances:
+	private Sphere   refPointNode;
+	private Cylinder refLineNode;
+	private Cylinder refVectorNode_Shaft;
+	private Cone     refVectorNode_Head;
+	private final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
+	private final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
+	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
+
+	/** materials used by the master instances: 0-point,1-line,2-vector */
+	final Material[] refMaterials;
 
 
 	/** additionally promotes SimViewer's own hot keys;
@@ -367,8 +410,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 			axesData[2].setMaterial(materials[3]);
 
 			//set orientation for x,z axes
-			ReOrientNode(axesData[0],new GLVector(0.0f,1.0f,0.0f),new GLVector(1.0f,0.0f,0.0f));
-			ReOrientNode(axesData[2],new GLVector(0.0f,1.0f,0.0f),new GLVector(0.0f,0.0f,1.0f));
+			ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+			ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
 
 			//place all axes into the scene centre
 			final GLVector centre = new GLVector(
@@ -480,7 +523,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 	/** these lines are registered with the display, but not necessarily always visible */
 	private final Map<Integer,Line> lineNodes = new HashMap<>();
 	/** these vectors are registered with the display, but not necessarily always visible */
-	private final Map<Integer,Vector> vectorNodes = new HashMap<>();
+	private final Map<Integer,VectorSH> vectorNodes = new HashMap<>();
 
 
 	/** this is designed (yet only) for SINGLE-THREAD application! */
@@ -516,20 +559,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 			nn.setMaterial(refPointNode.getMaterial());
 			nn.setScale(n.radius);
 			nn.setPosition(n.centre);
-			final GLVector col = new GLVector(1.0f,0.0f,0.f, 1.0f);
 
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
-			nn.getInstancedProperties().put("Color", () -> col);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
 			nn.setParent(scene);
 			refPointNode.getInstances().add(nn);
 
 			pointNodes.put(ID,n);
 			showOrHideMe(ID,n.node,spheresShown);
 		}
-
-		//TODO:
-		// if color is changed, became instance of another master (that of the right color)
 
 		//now update the point with the current data
 		n.update(p);
@@ -553,7 +592,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refLineNode.getInstances().remove(n.node);
 				lineNodes.remove(ID);
 			}
 			return;
@@ -563,26 +603,32 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new line: adding
-			n = new Line( new graphics.scenery.Line(4) );
-			n.node.setEdgeWidth(3.0f);
-			//no setPosition(), no setScale()
+			n = new Line( new Node() );
+			final Node nn = n.node;
+
+			//define the line
+			nn.setMaterial(refLineNode.getMaterial());
+			nn.setScale(n.auxScale);
+			nn.setPosition(n.base);
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
+			nn.setParent(scene);
+			refLineNode.getInstances().add(nn);
 
 			lineNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,linesShown);
 		}
 
-		//now update the line with the current data
-		n.update(l);
-		n.node.clearPoints();
-		n.node.addPoint(zeroGLvec);
-		n.node.addPoint(n.posA);
-		n.node.addPoint(n.posB);
-		n.node.addPoint(zeroGLvec);
-		//NB: surrounded by two mandatory fake points that are never displayed
-		n.node.setMaterial(materials[n.color % materials.length]);
+		//set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
 
+		//finally, update the line with the current data
+		n.update(l);
 		n.lastSeenTick = tickCounter;
+		n.node.updateWorld(false,false);
 	 }
 	}
 
@@ -594,14 +640,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 synchronized (lockOnChangingSceneContent)
 	 {
 		//attempt to retrieve node of this ID
-		Vector n = vectorNodes.get(ID);
+		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
 		if (v.color < 0)
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refVectorNode_Shaft.getInstances().remove(n.node);
+				refVectorNode_Head.getInstances().remove(n.nodeHead);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -610,35 +658,45 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//shall we create a new vector?
 		if (n == null)
 		{
-			//new vector: adding it already in the desired shape
-			n = new Vector( new Arrow(v.vector) );
-			n.node.setEdgeWidth(3.0f);
-			n.node.setPosition(n.base);
-			n.node.setScale(vectorsStretchGLvec);
+			//new vector: adding
+			n = new VectorSH( new Node(),new Node() );
+			final Node ns = n.node;
+			final Node nh = n.nodeHead;
 
-			//(here's the "adding it" part)
+			//define the vector
+			ns.setMaterial(refVectorNode_Shaft.getMaterial());
+			ns.setScale(n.auxScale);
+			ns.setPosition(n.base);
+
+			nh.setMaterial(refVectorNode_Head.getMaterial());
+			nh.setScale(n.auxScale);
+			nh.setPosition(n.auxHeadBase);
+
+			//spawn another instances
+			ns.getInstancedProperties().put("ModelMatrix", ns::getWorld);
+			ns.getInstancedProperties().put("Color", n::getColorRGB);
+			ns.setParent(scene);
+			refVectorNode_Shaft.getInstances().add(ns);
+
+			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
+			nh.getInstancedProperties().put("Color", n::getColorRGB);
+			nh.setParent(scene);
+			refVectorNode_Head.getInstances().add(nh);
+
 			vectorNodes.put(ID,n);
-			this.addChild(n.node);
-			showOrHideMe(ID,n.node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 		}
-		else
-		{
-			//existing vector: update it to the desired shape
-			n.node.reshape(v.vector);
-		}
-		//NB: n.vector is actually not used here!
-		//    (as Arrow.reshape() makes its own copy of
-		//     vector's shape, and we use v.vector here
-		//     to shape it; no reference to n.vector is
-		//     required and kept in the Arrow story)
-		//
-		//update the arrow with (at least) the current 'base' position
-		n.update(v);
-		n.node.setMaterial(materials[n.color % materials.length]);
 
+		//set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		n.nodeHead.setRotation(n.node.getRotation());
+
+		//finally, update the vector with the current data
+		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
 		n.lastSeenTick = tickCounter;
-
-		this.nodeSetNeedsUpdate(n.node);
+		n.node.updateWorld(false,false);
+		n.nodeHead.updateWorld(false,false);
 	 }
 	}
 
@@ -668,14 +726,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//NB: HashMap may be modified while being swept through only via iterator
 		//    (and iterator must remove the elements actually)
 		Iterator<Integer> i = pointNodes.keySet().iterator();
-
 		while (i.hasNext())
 		{
 			final Point p = pointNodes.get(i.next());
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				//scene.removeChild(n.node); -- was never added to the scene
+				//scene.removeChild(p.node); -- was never added to the scene
 				refPointNode.getInstances().remove(p.node);
 				i.remove();
 			}
@@ -688,7 +745,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 			if (l.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(l.node);
+				//scene.removeChild(l.node); -- was never added to the scene
+				refLineNode.getInstances().remove(l.node);
 				i.remove();
 			}
 		}
@@ -696,11 +754,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 		i = vectorNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final Vector v = vectorNodes.get(i.next());
+			final VectorSH v = vectorNodes.get(i.next());
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(v.node);
+				//scene.removeChild(v.node); -- was never added to the scene
+				refVectorNode_Shaft.getInstances().remove(v.node);
+				refVectorNode_Head.getInstances().remove(v.nodeHead);
 				i.remove();
 			}
 		}
@@ -712,96 +772,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
-	/** flags if nodes should be scene.addChild(node)'ed and node.setNeedsUpdate(true)'ed
-	    right away (the online process mode), or do all such later at once (the batch
-	    process mode) because this might have positive performance impact */
-	private boolean updateNodesImmediately = true;
-
-	/** buffer of nodes to be added to the scene (ideally) at the same time */
-	private final Node[] nodesYetToBeAdded    = new Node[10240]; //40 kB of RAM
-	private int          nodesYetToBeAddedCnt = 0;
-
-	/** buffer of nodes to have their 'needsUpdate' flag set (ideally) at the same time */
-	private final Node[] nodesYetToBeUpdated    = new Node[10240]; //40 kB of RAM
-	private int          nodesYetToBeUpdatedCnt = 0;
-
-	/** only signals/enables the 'batch process' mode,
-	    this is designed (yet only) for SINGLE-THREAD application! */
-	public
-	void suspendNodesUpdating()
-	{
-	 synchronized (lockOnChangingSceneContent)
-	 {
-		updateNodesImmediately = false;
-	 }
-	}
-
-	/** calls processNodesYetToBeSmth() and switches back to the 'online process' mode,
-	    this is designed (yet only) for SINGLE-THREAD application! */
-	public
-	void resumeNodesUpdating()
-	{
-	 synchronized (lockOnChangingSceneContent)
-	 {
-		updateNodesImmediately = true;
-		processNodesYetToBeSmth();
-	 }
-	}
-
-	/** processes (ideally at the same time) and clears the content of
-	    the two buffers (buffers for adding and updating nodes simultaneously) */
-	private
-	void processNodesYetToBeSmth()
-	{
-		for (int i=0; i < nodesYetToBeAddedCnt; ++i)
-			scene.addChild( nodesYetToBeAdded[i] );
-		nodesYetToBeAddedCnt = 0;
-
-		for (int i=0; i < nodesYetToBeUpdatedCnt; ++i)
-			nodesYetToBeUpdated[i].setNeedsUpdate(true);
-		nodesYetToBeUpdatedCnt = 0;
-	}
-
-	/** either registers the node into the Scenery's scene immediately (when in the online
-	    process mode), or registers into the 'nodesYetToBeAdded' buffer (when in the batch
-	    process mode) */
-	private
-	void addChild(final Node node)
-	{
-		if (updateNodesImmediately) scene.addChild(node);
-		else
-		{
-			nodesYetToBeAdded[nodesYetToBeAddedCnt++] = node;
-
-			//overrun protection
-			if (nodesYetToBeAddedCnt == nodesYetToBeAdded.length)
-				processNodesYetToBeSmth();
-		}
-	}
-
-	/** either sets 'needsUpdate' flag of the node immediately (when in the online
-	    process mode), or registers into the 'nodesYetToBeUpdated' buffer to
-	    have it set later (when in the batch process mode) */
-	private
-	void nodeSetNeedsUpdate(final Node node)
-	{
-		if (updateNodesImmediately) node.setNeedsUpdate(true);
-		else
-		{
-			nodesYetToBeUpdated[nodesYetToBeUpdatedCnt++] = node;
-
-			//overrun protection
-			if (nodesYetToBeUpdatedCnt == nodesYetToBeUpdated.length)
-				processNodesYetToBeSmth();
-		}
-	}
-	//----------------------------------------------------------------------------
-
-
 	/** cell forces are typically small in magnitude compared to the cell size,
 	    this defines the current magnification applied when displaying the force vectors */
 	private float vectorsStretch = 1.f;
-	private GLVector vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 	float getVectorsStretch()
 	{ return vectorsStretch; }
@@ -812,15 +785,15 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 {
 		//update the stretch factor...
 		vectorsStretch = vs;
-		vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 		//...and rescale all vectors presently existing in the system
-		vectorNodes.values().forEach( n -> n.node.setScale(vectorsStretchGLvec) );
+		vectorNodes.values().forEach( n -> {
+			n.applyScale(vectorsStretch,vec_headLengthRatio);
+			n.node.updateWorld(false,false);
+			n.nodeHead.updateWorld(false,false);
+		} );
 	 }
 	}
-
-	/** shortcut zero vector to prevent from coding "new GLVector(0.f,3)" where needed */
-	private final GLVector zeroGLvec = new GLVector(0.f,3);
 	//----------------------------------------------------------------------------
 
 
@@ -886,7 +859,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.g_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.g_Mode;
 	 }
@@ -905,7 +879,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return cellDebugShown;
 	 }
@@ -951,7 +926,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.G_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.G_Mode;
 	 }
@@ -970,7 +946,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return generalDebugShown;
 	 }
@@ -982,12 +959,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 	{
 		for (Material m : materials)
 			m.setCullingMode(CullingMode.Front);
+		for (Material m : refMaterials)
+			m.setCullingMode(CullingMode.Front);
 	}
 
 	public
 	void DisableFrontFaceCulling()
 	{
 		for (Material m : materials)
+			m.setCullingMode(CullingMode.None);
+		for (Material m : refMaterials)
 			m.setCullingMode(CullingMode.None);
 	}
 	//----------------------------------------------------------------------------
@@ -1044,6 +1025,17 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n != null) n.setVisible(vis);
 		return vis;
 	}
+
+	private
+	void showOrHideMeForVectorSH(final int ID)
+	{
+		final VectorSH v = vectorNodes.get(ID);
+		if (v == null)
+			throw new RuntimeException("Invalid vector ID given (ID="+ID+")");
+
+		v.nodeHead.setVisible( showOrHideMe(ID,v.node,vectorsShown) );
+		//NB: sets the same visibility to both nodes, see few lines above
+	}
 	//----------------------------------------------------------------------------
 
 
@@ -1068,12 +1060,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
-	/**
-	Rotates the node such that its orientation (whatever it is for the node, e.g.
-	the axis of rotational symmetry in a cylinder) given with _normalized_
-	currentNormalizedOrientVec will match the new orientation newOrientVec.
-	The normalized variant of newOrientVec will be stored into the currentNormalizedOrientVec.
-	*/
+	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
+	    the axis of rotational symmetry in a cylinder) given with _normalized_
+	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
 	public
 	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
@@ -1105,6 +1094,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 		//System.out.println("rot axis=("+tmpVec.x()+","+tmpVec.y()+","+tmpVec.z()
 		//                   +"), rot angle="+rotAngle+" rad");
+	}
+
+	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
+	    will be stored into the currentNormalizedOrientVec. */
+	public
+	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
+	                  final GLVector currentNormalizedOrientVec,
+	                  final GLVector newOrientVec)
+	{
+		ReOrientNode(node, currentNormalizedOrientVec, newOrientVec);
 
 		//update the current orientation
 		currentNormalizedOrientVec.minusAssign(currentNormalizedOrientVec);

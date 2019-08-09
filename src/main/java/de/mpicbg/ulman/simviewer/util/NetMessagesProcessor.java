@@ -74,8 +74,6 @@ public class NetMessagesProcessor
 		s.next();
 		final int N = s.nextInt();
 
-		if (N > 10) scene.suspendNodesUpdating();
-
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
 		{
@@ -112,8 +110,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -128,8 +124,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -153,13 +147,13 @@ public class NetMessagesProcessor
 
 			//now read the first in the pair and save coordinates
 			int d=0;
-			for (; d < D && d < 3; ++d) l.posA.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) l.base.set(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
 			//now read the second in the pair and save sizes
 			d=0;
-			for (; d < D && d < 3; ++d) l.posB.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) l.vector.set(d, s.nextFloat() - l.base.get(d));
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
@@ -169,8 +163,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -185,8 +177,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -226,8 +216,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
