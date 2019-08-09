@@ -864,7 +864,6 @@ public class DisplayScene extends SceneryBase implements Runnable
 	/** cell forces are typically small in magnitude compared to the cell size,
 	    this defines the current magnification applied when displaying the force vectors */
 	private float vectorsStretch = 1.f;
-	private GLVector vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 	float getVectorsStretch()
 	{ return vectorsStretch; }
@@ -875,11 +874,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 {
 		//update the stretch factor...
 		vectorsStretch = vs;
-		vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 		//...and rescale all vectors presently existing in the system
-		vectorNodes.values().forEach( n -> n.node.setScale(vectorsStretchGLvec) );
-		//TODO: update every vector's auxScale and trigger its updateWorld()
+		vectorNodes.values().forEach( n -> {
+			n.applyScale(vectorsStretch,vec_headLengthRatio);
+			n.node.updateWorld(false,false);
+			n.nodeHead.updateWorld(false,false);
+		} );
 	 }
 	}
 
