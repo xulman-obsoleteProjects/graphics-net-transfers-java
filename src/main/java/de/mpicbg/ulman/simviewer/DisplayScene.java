@@ -1,19 +1,52 @@
+/**
+BSD 2-Clause License
+
+Copyright (c) 2019, Vladimír Ulman
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 package de.mpicbg.ulman.simviewer;
 
 import cleargl.GLVector;
 import graphics.scenery.*;
-import graphics.scenery.backends.Renderer;
+import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
-import graphics.scenery.controls.InputHandler;
 import org.scijava.ui.behaviour.ClickBehaviour;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Iterator;
 
-import de.mpicbg.ulman.simviewer.aux.Point;
-import de.mpicbg.ulman.simviewer.aux.Line;
-import de.mpicbg.ulman.simviewer.aux.Vector;
+import sc.iview.SciView;
+import sc.iview.commands.demo.ParticleDemo;
+import de.mpicbg.ulman.simviewer.elements.Point;
+import de.mpicbg.ulman.simviewer.elements.Line;
+import de.mpicbg.ulman.simviewer.elements.Vector;
+import de.mpicbg.ulman.simviewer.elements.VectorSH;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -21,21 +54,34 @@ import de.mpicbg.ulman.simviewer.aux.Vector;
  *
  * This file was created and is being developed by Vladimir Ulman, 2018.
  */
-public class DisplayScene extends SceneryBase implements Runnable
+public class DisplayScene
 {
 	/** constructor to create an empty window */
 	public
-	DisplayScene(final float[] sOffset, final float[] sSize)
+	DisplayScene(final SciView sciView,
+	             final float[] sOffset, final float[] sSize)
 	{
-		//the last param determines whether REPL is wanted, or not
-		super("EmbryoGen - live view using scenery", 1024,512, false);
-
 		if (sOffset.length != 3 || sSize.length != 3)
 			throw new RuntimeException("Offset and Size must be 3-items long: 3D world!");
 
 		//init the scene dimensions
-		sceneOffset = sOffset.clone();
-		sceneSize   = sSize.clone();
+		sceneOffset  = sOffset.clone();
+		sceneSize    = sSize.clone();
+		this.sciView = sciView;
+
+		//the overall down scaling of the displayed objects such that moving around
+		//the scene with Scenery is vivid (move step size is fixed in Scenery), at
+		//the same time we want the objects and distances to be defined with our
+		//non-scaled coordinates -- so we hook everything underneath the fake object
+		//that is downscaled (and consequently all is downscaled too) but defined with
+		//at original scale (with original coordinates and distances)
+		DsFactor = sciView.getSceneryRenderer().toString().contains("vulkan")? 0.04f : 0.1f;
+
+		//introduce an invisible "fake" object
+		scene = new Box(new GLVector(0.0f,3));
+		scene.setScale(new GLVector(DsFactor,3));
+		scene.setName("SimViewer");
+		sciView.addNode(scene);
 
 		//init the colors -- the material lookup table
 		materials = new Material[7];
@@ -46,278 +92,106 @@ public class DisplayScene extends SceneryBase implements Runnable
 		(materials[4] = new Material()).setDiffuse( new GLVector(0.0f, 1.0f, 1.0f) );
 		(materials[5] = new Material()).setDiffuse( new GLVector(1.0f, 0.0f, 1.0f) );
 		(materials[6] = new Material()).setDiffuse( new GLVector(1.0f, 1.0f, 0.0f) );
+		//
 		for (Material m : materials)
 		{
 			m.setCullingMode(CullingMode.None);
 			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
 			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
 		}
-	}
 
-	/** 3D position of the scene, to position well the lights and camera */
-	final float[] sceneOffset;
-	/** 3D size (diagonal vector) of the scene, to position well the lights and camera */
-	final float[] sceneSize;
+		//also init materials of the master instances
+		final List<ShaderType> sList = new ArrayList<>(2);
+		sList.add(ShaderType.VertexShader);
+		sList.add(ShaderType.FragmentShader);
 
-	/** fixed lookup table with colors, in the form of materials... */
-	final Material[] materials;
-
-	/** short cut to the root Node underwhich all displayed objects should be hooked up */
-	Node scene = null;
-
-	/** reference for the camera to be able to enable/disable head lights */
-	Camera cam;
-	//----------------------------------------------------------------------------
-
-
-	/** initializes the scene with one camera and multiple lights */
-	public
-	void init()
-	{
-		final Renderer r = Renderer.createRenderer(getHub(), getApplicationName(), getScene(), getWindowWidth(), getWindowHeight());
-		setRenderer(r);
-		getHub().add(SceneryElement.Renderer, getRenderer());
-
-		//the overall down scaling of the displayed objects such that moving around
-		//the scene with Scenery is vivid (move step size is fixed in Scenery), at
-		//the same time we want the objects and distances to be defined with our
-		//non-scaled coordinates -- so we hook everything underneath the fake object
-		//that is downscaled (and consequently all is downscaled too) but defined with
-		//at original scale (with original coordinates and distances)
-		final float DsFactor = r.toString().contains("vulkan")? 0.04f : 0.1f;
-
-		//introduce an invisible "fake" object
-		scene = new Box(new GLVector(0.0f,3));
-		scene.setScale(new GLVector(DsFactor,3));
-		getScene().addChild(scene);
-
-		//camera position, looking from the front into the scene centre
-		//NB: z-position should be such that the FOV covers the whole scene
-		float xCam = (sceneOffset[0] + 0.5f*sceneSize[0]) *DsFactor;
-		float yCam = (sceneOffset[1] + 0.5f*sceneSize[1]) *DsFactor;
-		float zCam = (sceneOffset[2] + 1.7f*sceneSize[2]) *DsFactor;
-		cam = new DetachedHeadCamera();
-		cam.setPosition( new GLVector(xCam,yCam,zCam) );
-		cam.perspectiveCamera(50.0f, getRenderer().getWindow().getWidth(), getRenderer().getWindow().getHeight(), 1.0f*DsFactor, 100000.0f*DsFactor);
-		cam.setActive( true );
-		getScene().addChild(cam);
-
-		//a cam-attached light mini-ramp
-		//------------------------------
-		xCam =  0.3f*sceneSize[0] *DsFactor;
-		yCam =  0.2f*sceneSize[1] *DsFactor;
-		zCam = -0.1f*sceneSize[2] *DsFactor;
-
-		float radius = 0.8f*sceneSize[1] *DsFactor;
-
-		headLights = new PointLight[6];
-		(headLights[0] = new PointLight(radius)).setPosition(new GLVector(-xCam,-yCam,zCam));
-		(headLights[1] = new PointLight(radius)).setPosition(new GLVector( 0.0f,-yCam,zCam));
-		(headLights[2] = new PointLight(radius)).setPosition(new GLVector(+xCam,-yCam,zCam));
-		(headLights[3] = new PointLight(radius)).setPosition(new GLVector(-xCam,+yCam,zCam));
-		(headLights[4] = new PointLight(radius)).setPosition(new GLVector( 0.0f,+yCam,zCam));
-		(headLights[5] = new PointLight(radius)).setPosition(new GLVector(+xCam,+yCam,zCam));
-
-		//two light ramps at fixed positions
-		//----------------------------------
-		//elements of coordinates of positions of lights
-		final float xLeft   = (sceneOffset[0] + 0.05f*sceneSize[0]) *DsFactor;
-		final float xCentre = (sceneOffset[0] + 0.50f*sceneSize[0]) *DsFactor;
-		final float xRight  = (sceneOffset[0] + 0.95f*sceneSize[0]) *DsFactor;
-
-		final float yTop    = (sceneOffset[1] + 0.05f*sceneSize[1]) *DsFactor;
-		final float yBottom = (sceneOffset[1] + 0.95f*sceneSize[1]) *DsFactor;
-
-		final float zNear = (sceneOffset[2] + 1.3f*sceneSize[2]) *DsFactor;
-		final float zFar  = (sceneOffset[2] - 0.3f*sceneSize[2]) *DsFactor;
-
-		//tuned such that, given current light intensity and fading, the rear cells are dark yet visible
-		radius = 1.1f*sceneSize[1] *DsFactor;
-
-		//create the lights, one for each upper corner of the scene
-		fixedLights = new PointLight[2][6];
-		(fixedLights[0][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zNear));
-		(fixedLights[0][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zNear));
-		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNear));
-		(fixedLights[0][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zNear));
-		(fixedLights[0][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zNear));
-		(fixedLights[0][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zNear));
-
-		(fixedLights[1][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zFar));
-		(fixedLights[1][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zFar));
-		(fixedLights[1][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zFar));
-		(fixedLights[1][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zFar));
-		(fixedLights[1][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zFar));
-		(fixedLights[1][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zFar));
-
-		//common settings of all lights, front fixed ramp is currently in use
-		//------------------------------
-		final GLVector lightsColor = new GLVector(1.0f, 1.0f, 1.0f);
-		for (PointLight l : headLights)
+		refMaterials = new Material[3];
+		refMaterials[0] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
+		refMaterials[1] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
+		refMaterials[2] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
+		//
+		for (Material m : refMaterials)
 		{
-			l.setIntensity((150.0f*DsFactor)*(150.0f*DsFactor));
-			l.setEmissionColor(lightsColor);
-		}
-		for (PointLight l : fixedLights[0])
-		{
-			l.setIntensity((200.0f*DsFactor)*(200.0f*DsFactor));
-			l.setEmissionColor(lightsColor);
-		}
-		for (PointLight l : fixedLights[1])
-		{
-			l.setIntensity((200.0f*DsFactor)*(200.0f*DsFactor));
-			l.setEmissionColor(lightsColor);
+			m.setCullingMode(CullingMode.None);
+			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
+			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
 		}
 
-		//enable the fixed ramp lights
-		ToggleFixedLights(); //just the front ramp
-		ToggleFixedLights(); //just the rear ramp
-		ToggleFixedLights(); //both ramps
-	}
+		//instancing:
+		//define a master instance point (Sphere)
+		refMaterials[0].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
+		refPointNode = new Sphere(1.0f, 12);
+		refPointNode.setMaterial(refMaterials[0]);
+		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
+		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		refPointNode.setName("master instance - sphere");
+		sciView.addNode(refPointNode);
 
-	/** additionally promotes SimViewer's own hot keys;
-	    call this method only when the Scenery is ready... */
-	void setupOwnHotkeys()
-	{
-		final InputHandler ih = this.getInputHandler();
-		ih.addBehaviour( "SV_7", new BehaviourForFlightRecorder('7'));
-		ih.addKeyBinding("SV_7", "7");
-		ih.addBehaviour( "SV_8", new BehaviourForFlightRecorder('8'));
-		ih.addKeyBinding("SV_8", "8");
-		ih.addBehaviour( "SV_9", new BehaviourForFlightRecorder('9'));
-		ih.addKeyBinding("SV_9", "9");
-		ih.addBehaviour( "SV_0", new BehaviourForFlightRecorder('0'));
-		ih.addKeyBinding("SV_0", "0");
-	}
+		//define a master instance line
+		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
+		refLineNode = new Cylinder(0.3f, 1.0f, 4);
+		refLineNode.setMaterial(refMaterials[1]);
+		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
+		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		refLineNode.setName("master instance - line");
+		sciView.addNode(refLineNode);
 
-	/** runs the scenery rendering backend in a separate thread */
-	public
-	void run()
-	{
-		//this is the main loop: the code "blocks" here until the main window is closed,
-		//and that's gonna be the job of this thread
-		this.main();
+		//define a master instance vector as two instances (of the same material):
+		//the vector shaft (slim Cylinder) and head (Cone)
+		refMaterials[2].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
+		refVectorNode_Shaft = new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
+		refVectorNode_Shaft.setMaterial(refMaterials[2]);
+		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
+		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		refVectorNode_Shaft.setName("master instance - vector shaft");
+		sciView.addNode(refVectorNode_Shaft);
+		//
+		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
+		refVectorNode_Head.setMaterial(refMaterials[2]);
+		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
+		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+		refVectorNode_Head.setName("master instance - vector head");
+		sciView.addNode(refVectorNode_Head);
 	}
 
 	/** attempts to close this rendering window */
 	public
 	void stop()
 	{
-		this.close();
+		//this.close();
 	}
 	//----------------------------------------------------------------------------
 
 
-	/** returns true when the underlying rendering machinery is ready to draw anything */
-	public
-	void waitUntilSceneIsReady()
-	throws InterruptedException
-	{
-		//official Scenery flag
-		while (!this.sceneInitialized()) Thread.sleep(1000);
-		//proof that this.init() is indeed in progress
-		while (scene == null)            Thread.sleep(1000);
-		//this condition used to work alone...
-		while (!scene.getInitialized())  Thread.sleep(1000);
-		//also wait until InputHandler is available...
-		while (this.getInputHandler() == null) Thread.sleep(1000);
-	}
+	/** short cut to the sciView itself - the main root of the scene graph */
+	final SciView sciView;
 
-	/** exposes the InputHandler outside this class */
-	public
-	InputHandler exposeInputHandler()
-	{
-		return this.getInputHandler();
-	}
+	/** short cut to the root Node underwhich all displayed objects should be hooked up,
+	    this one is typically hooked right under the this.sciView */
+	final Node scene;
 
-	/** helper method to save the current content of the scene into /tmp/frameXXXX.png */
-	public
-	void saveNextScreenshot()
-	{
-		final String filename = String.format("/tmp/frame%04d.png",tickCounter);
-		System.out.println("Saving screenshot: "+filename);
-		this.getRenderer().screenshot(filename,true);
-	}
-	//
-	/** flag for external modules to see if they should call saveNextScreenshot() */
-	public boolean savingScreenshots = false;
+	/** 3D position of the scene, to position well the lights and camera */
+	final float[] sceneOffset;
+	/** 3D size (diagonal vector) of the scene, to position well the lights and camera */
+	final float[] sceneSize;
 
-	/** counts how many times the "tick message" has been received, this message
-	    is assumed to be sent typically after one simulation round is over */
-	private int tickCounter = 0;
-	//
-	public
-	void increaseTickCounter()
-	{
-	 synchronized (lockOnChangingSceneContent)
-	 {
-		++tickCounter;
-	 }
-	}
+	/** the common scaling factor applied on all spatial units before their submitted to the scene */
+	final float DsFactor;
 
-	/** attempts to turn on/off the "push mode", and reports the state */
-	public
-	boolean TogglePushMode()
-	{
-		this.getRenderer().setPushMode( !this.getRenderer().getPushMode() );
-		return this.getRenderer().getPushMode();
-	}
-	//----------------------------------------------------------------------------
+	/** fixed lookup table with colors, in the form of materials... */
+	final Material[] materials;
 
+	//instancing, master instances:
+	private Sphere   refPointNode;
+	private Cylinder refLineNode;
+	private Cylinder refVectorNode_Shaft;
+	private Cone     refVectorNode_Head;
+	private final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
+	private final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
+	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 
-	//initiated in this.init() to match their state flags below
-	private PointLight[][] fixedLights;
-	private PointLight[]   headLights;
-
-	public enum fixedLightsState { FRONT, REAR, BOTH, NONE };
-
-	//the state flags of the lights
-	private fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
-	private boolean          headLightsChoosen  = false;
-
-	public
-	fixedLightsState ToggleFixedLights()
-	{
-		final Node camRoot = cam.getParent();
-
-		switch (fixedLightsChoosen)
-		{
-		case FRONT:
-			for (PointLight l : fixedLights[0]) camRoot.removeChild(l);
-			for (PointLight l : fixedLights[1]) camRoot.addChild(l);
-			fixedLightsChoosen = fixedLightsState.REAR;
-			break;
-		case REAR:
-			for (PointLight l : fixedLights[0]) camRoot.addChild(l);
-			fixedLightsChoosen = fixedLightsState.BOTH;
-			break;
-		case BOTH:
-			for (PointLight l : fixedLights[0]) camRoot.removeChild(l);
-			for (PointLight l : fixedLights[1]) camRoot.removeChild(l);
-			fixedLightsChoosen = fixedLightsState.NONE;
-			break;
-		case NONE:
-			for (PointLight l : fixedLights[0]) camRoot.addChild(l);
-			fixedLightsChoosen = fixedLightsState.FRONT;
-			break;
-		}
-
-		//report the current state
-		return fixedLightsChoosen;
-	}
-
-	public
-	boolean ToggleHeadLights()
-	{
-		headLightsChoosen ^= true; //toggles the state
-
-		if (headLightsChoosen)
-			for (PointLight l : headLights) cam.addChild(l);
-		else
-			for (PointLight l : headLights) cam.removeChild(l);
-
-		return headLightsChoosen;
-	}
+	/** materials used by the master instances: 0-point,1-line,2-vector */
+	final Material[] refMaterials;
 	//----------------------------------------------------------------------------
 
 
@@ -342,8 +216,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 			axesData[2].setMaterial(materials[3]);
 
 			//set orientation for x,z axes
-			ReOrientNode(axesData[0],new GLVector(0.0f,1.0f,0.0f),new GLVector(1.0f,0.0f,0.0f));
-			ReOrientNode(axesData[2],new GLVector(0.0f,1.0f,0.0f),new GLVector(0.0f,0.0f,1.0f));
+			ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+			ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
 
 			//place all axes into the scene centre
 			final GLVector centre = new GLVector(
@@ -353,6 +227,10 @@ public class DisplayScene extends SceneryBase implements Runnable
 			axesData[0].setPosition(centre);
 			axesData[1].setPosition(centre);
 			axesData[2].setPosition(centre);
+
+			axesData[0].setName("compass axis: X");
+			axesData[1].setName("compass axis: Y");
+			axesData[2].setName("compass axis: Z");
 		}
 
 		//add-or-remove from the scene
@@ -421,6 +299,11 @@ public class DisplayScene extends SceneryBase implements Runnable
 			borderData[3].addPoint(sxsysz);
 			borderData[3].setMaterial(materials[3]);
 
+			borderData[0].setName("border wire frame");
+			borderData[1].setName("border wire frame");
+			borderData[2].setName("border wire frame");
+			borderData[3].setName("border wire frame");
+
 			for (graphics.scenery.Line l : borderData)
 			{
 				//second of the two mandatory surrounding fake points that are never displayed
@@ -442,6 +325,137 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
+	private PointLight[][] fixedLights;
+
+	public
+	void CreateFixedLightsRamp()
+	{
+		//two light ramps at fixed positions
+		//----------------------------------
+		//elements of coordinates of positions of lights
+		final float xLeft   = (sceneOffset[0] + 0.05f*sceneSize[0]) *DsFactor;
+		final float xCentre = (sceneOffset[0] + 0.50f*sceneSize[0]) *DsFactor;
+		final float xRight  = (sceneOffset[0] + 0.95f*sceneSize[0]) *DsFactor;
+
+		final float yTop    = (sceneOffset[1] + 0.05f*sceneSize[1]) *DsFactor;
+		final float yBottom = (sceneOffset[1] + 0.95f*sceneSize[1]) *DsFactor;
+
+		final float zNear = (sceneOffset[2] + 1.3f*sceneSize[2]) *DsFactor;
+		final float zFar  = (sceneOffset[2] - 0.3f*sceneSize[2]) *DsFactor;
+
+		//tuned such that, given current light intensity and fading, the rear cells are dark yet visible
+		final float radius = 1.1f*sceneSize[1] *DsFactor;
+
+		//create the lights, one for each upper corner of the scene
+		fixedLights = new PointLight[2][6];
+		(fixedLights[0][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zNear));
+		(fixedLights[0][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zNear));
+		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNear));
+		(fixedLights[0][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zNear));
+		(fixedLights[0][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zNear));
+		(fixedLights[0][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zNear));
+
+		(fixedLights[1][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zFar));
+		(fixedLights[1][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zFar));
+		(fixedLights[1][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zFar));
+		(fixedLights[1][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zFar));
+		(fixedLights[1][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zFar));
+		(fixedLights[1][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zFar));
+
+		fixedLights[0][0].setName("PointLight: x-left, y-bottom, z-near");
+		fixedLights[0][1].setName("PointLight: x-left, y-top, z-near");
+		fixedLights[0][2].setName("PointLight: x-centre, y-bottom, z-near");
+		fixedLights[0][3].setName("PointLight: x-centre, y-top, z-near");
+		fixedLights[0][4].setName("PointLight: x-right, y-bottom, z-near");
+		fixedLights[0][5].setName("PointLight: x-right, y-top, z-near");
+
+		fixedLights[1][0].setName("PointLight: x-left, y-bottom, z-far");
+		fixedLights[1][1].setName("PointLight: x-left, y-top, z-far");
+		fixedLights[1][2].setName("PointLight: x-centre, y-bottom, z-far");
+		fixedLights[1][3].setName("PointLight: x-centre, y-top, z-far");
+		fixedLights[1][4].setName("PointLight: x-right, y-bottom, z-far");
+		fixedLights[1][5].setName("PointLight: x-right, y-top, z-far");
+
+		//common settings of all lights
+		final GLVector lightsColor = new GLVector(1.0f, 1.0f, 1.0f);
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+			{
+				l.setIntensity((200.0f*DsFactor)*(200.0f*DsFactor));
+				l.setEmissionColor(lightsColor);
+				l.setVisible(false);
+				sciView.addNode(l);
+			}
+	}
+
+	public
+	void RemoveFixedLightsRamp()
+	{
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+				sciView.deleteNode(l);
+
+		fixedLights = null;
+	}
+
+	//the state flags of the lights
+	public enum fixedLightsState { FRONT, REAR, BOTH, NONE };
+	protected fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
+
+	public
+	fixedLightsState ToggleFixedLights()
+	{
+		if (fixedLights == null)
+		{
+			System.out.println("Creating light ramp before turning it on...");
+			this.CreateFixedLightsRamp();
+		}
+
+		switch (fixedLightsChoosen)
+		{
+		case FRONT:
+			for (PointLight l : fixedLights[0]) l.setVisible(false);
+			for (PointLight l : fixedLights[1]) l.setVisible(true);
+			fixedLightsChoosen = fixedLightsState.REAR;
+			break;
+		case REAR:
+			for (PointLight l : fixedLights[0]) l.setVisible(true);
+			fixedLightsChoosen = fixedLightsState.BOTH;
+			break;
+		case BOTH:
+			for (PointLight l : fixedLights[0]) l.setVisible(false);
+			for (PointLight l : fixedLights[1]) l.setVisible(false);
+			fixedLightsChoosen = fixedLightsState.NONE;
+			break;
+		case NONE:
+			for (PointLight l : fixedLights[0]) l.setVisible(true);
+			fixedLightsChoosen = fixedLightsState.FRONT;
+			break;
+		}
+
+		//report the current state
+		return fixedLightsChoosen;
+	}
+
+
+	//----------------------------------------------------------------------------
+
+
+	/** counts how many times the "tick message" has been received, this message
+	    is assumed to be sent typically after one simulation round is over */
+	private int tickCounter = 0;
+	//
+	public
+	void increaseTickCounter()
+	{
+	 synchronized (lockOnChangingSceneContent)
+	 {
+		++tickCounter;
+	 }
+	}
+	//----------------------------------------------------------------------------
+
+
 	/** A handle on a lock (synchronization subject) that shall be used when a caller
 	    wants to modify any of the pointNodes, lineNodes, vectorNodes or tickCounter.
 
@@ -455,7 +469,7 @@ public class DisplayScene extends SceneryBase implements Runnable
 	/** these lines are registered with the display, but not necessarily always visible */
 	private final Map<Integer,Line> lineNodes = new HashMap<>();
 	/** these vectors are registered with the display, but not necessarily always visible */
-	private final Map<Integer,Vector> vectorNodes = new HashMap<>();
+	private final Map<Integer,VectorSH> vectorNodes = new HashMap<>();
 
 
 	/** this is designed (yet only) for SINGLE-THREAD application! */
@@ -473,7 +487,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refPointNode.getInstances().remove(n.node);
 				pointNodes.remove(ID);
 			}
 			return;
@@ -483,22 +498,28 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new point: adding
-			n = new Point( new Sphere(1.0f, 12) );
-			n.node.setPosition(n.centre);
-			n.node.setScale(n.radius);
+			n = new Point( new Node() );
+			final Node nn = n.node;
+
+			//define the point
+			nn.setMaterial(refPointNode.getMaterial());
+			nn.setScale(n.radius);
+			nn.setPosition(n.centre);
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
+			nn.setParent(scene);
+			refPointNode.getInstances().add(nn);
 
 			pointNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,spheresShown);
 		}
 
 		//now update the point with the current data
 		n.update(p);
-		n.node.setMaterial(materials[n.color % materials.length]);
-
 		n.lastSeenTick = tickCounter;
-
-		this.nodeSetNeedsUpdate(n.node);
+		n.node.updateWorld(false,false);
 	 }
 	}
 
@@ -517,7 +538,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refLineNode.getInstances().remove(n.node);
 				lineNodes.remove(ID);
 			}
 			return;
@@ -527,26 +549,32 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n == null)
 		{
 			//new line: adding
-			n = new Line( new graphics.scenery.Line(4) );
-			n.node.setEdgeWidth(3.0f);
-			//no setPosition(), no setScale()
+			n = new Line( new Node() );
+			final Node nn = n.node;
+
+			//define the line
+			nn.setMaterial(refLineNode.getMaterial());
+			nn.setScale(n.auxScale);
+			nn.setPosition(n.base);
+
+			//spawn another instance
+			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
+			nn.getInstancedProperties().put("Color", n::getColorRGB);
+			nn.setParent(scene);
+			refLineNode.getInstances().add(nn);
 
 			lineNodes.put(ID,n);
-			this.addChild(n.node);
 			showOrHideMe(ID,n.node,linesShown);
 		}
 
-		//now update the line with the current data
+		//update the line with the current data
 		n.update(l);
-		n.node.clearPoints();
-		n.node.addPoint(zeroGLvec);
-		n.node.addPoint(n.posA);
-		n.node.addPoint(n.posB);
-		n.node.addPoint(zeroGLvec);
-		//NB: surrounded by two mandatory fake points that are never displayed
-		n.node.setMaterial(materials[n.color % materials.length]);
-
 		n.lastSeenTick = tickCounter;
+
+		//finally, set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
+		//NB: this triggers n.node.updateWorld() automatically
 	 }
 	}
 
@@ -558,14 +586,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 synchronized (lockOnChangingSceneContent)
 	 {
 		//attempt to retrieve node of this ID
-		Vector n = vectorNodes.get(ID);
+		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
 		if (v.color < 0)
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				//scene.removeChild(n.node); -- was never added to the scene
+				refVectorNode_Shaft.getInstances().remove(n.node);
+				refVectorNode_Head.getInstances().remove(n.nodeHead);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -574,35 +604,44 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//shall we create a new vector?
 		if (n == null)
 		{
-			//new vector: adding it already in the desired shape
-			n = new Vector( new Arrow(v.vector) );
-			n.node.setEdgeWidth(3.0f);
-			n.node.setPosition(n.base);
-			n.node.setScale(vectorsStretchGLvec);
+			//new vector: adding
+			n = new VectorSH( new Node(),new Node() );
+			final Node ns = n.node;
+			final Node nh = n.nodeHead;
 
-			//(here's the "adding it" part)
+			//define the vector
+			ns.setMaterial(refVectorNode_Shaft.getMaterial());
+			ns.setScale(n.auxScale);
+			ns.setPosition(n.base);
+
+			nh.setMaterial(refVectorNode_Head.getMaterial());
+			nh.setScale(n.auxScale);
+			nh.setPosition(n.auxHeadBase);
+
+			//spawn another instances
+			ns.getInstancedProperties().put("ModelMatrix", ns::getWorld);
+			ns.getInstancedProperties().put("Color", n::getColorRGB);
+			ns.setParent(scene);
+			refVectorNode_Shaft.getInstances().add(ns);
+
+			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
+			nh.getInstancedProperties().put("Color", n::getColorRGB);
+			nh.setParent(scene);
+			refVectorNode_Head.getInstances().add(nh);
+
 			vectorNodes.put(ID,n);
-			this.addChild(n.node);
-			showOrHideMe(ID,n.node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 		}
-		else
-		{
-			//existing vector: update it to the desired shape
-			n.node.reshape(v.vector);
-		}
-		//NB: n.vector is actually not used here!
-		//    (as Arrow.reshape() makes its own copy of
-		//     vector's shape, and we use v.vector here
-		//     to shape it; no reference to n.vector is
-		//     required and kept in the Arrow story)
-		//
-		//update the arrow with (at least) the current 'base' position
-		n.update(v);
-		n.node.setMaterial(materials[n.color % materials.length]);
 
+		//update the vector with the current data
+		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
 		n.lastSeenTick = tickCounter;
 
-		this.nodeSetNeedsUpdate(n.node);
+		//finally, set the new absolute orientation
+		n.node.getRotation().setIdentity();
+		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		n.nodeHead.setRotation(n.node.getRotation());
+		//NB: this triggers n.nodes.updateWorld() automatically
 	 }
 	}
 
@@ -632,14 +671,14 @@ public class DisplayScene extends SceneryBase implements Runnable
 		//NB: HashMap may be modified while being swept through only via iterator
 		//    (and iterator must remove the elements actually)
 		Iterator<Integer> i = pointNodes.keySet().iterator();
-
 		while (i.hasNext())
 		{
 			final Point p = pointNodes.get(i.next());
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(p.node);
+				//scene.removeChild(p.node); -- was never added to the scene
+				refPointNode.getInstances().remove(p.node);
 				i.remove();
 			}
 		}
@@ -651,7 +690,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 			if (l.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(l.node);
+				//scene.removeChild(l.node); -- was never added to the scene
+				refLineNode.getInstances().remove(l.node);
 				i.remove();
 			}
 		}
@@ -659,11 +699,13 @@ public class DisplayScene extends SceneryBase implements Runnable
 		i = vectorNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final Vector v = vectorNodes.get(i.next());
+			final VectorSH v = vectorNodes.get(i.next());
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(v.node);
+				//scene.removeChild(v.node); -- was never added to the scene
+				refVectorNode_Shaft.getInstances().remove(v.node);
+				refVectorNode_Head.getInstances().remove(v.nodeHead);
 				i.remove();
 			}
 		}
@@ -675,96 +717,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
-	/** flags if nodes should be scene.addChild(node)'ed and node.setNeedsUpdate(true)'ed
-	    right away (the online process mode), or do all such later at once (the batch
-	    process mode) because this might have positive performance impact */
-	private boolean updateNodesImmediately = true;
-
-	/** buffer of nodes to be added to the scene (ideally) at the same time */
-	private final Node[] nodesYetToBeAdded    = new Node[10240]; //40 kB of RAM
-	private int          nodesYetToBeAddedCnt = 0;
-
-	/** buffer of nodes to have their 'needsUpdate' flag set (ideally) at the same time */
-	private final Node[] nodesYetToBeUpdated    = new Node[10240]; //40 kB of RAM
-	private int          nodesYetToBeUpdatedCnt = 0;
-
-	/** only signals/enables the 'batch process' mode,
-	    this is designed (yet only) for SINGLE-THREAD application! */
-	public
-	void suspendNodesUpdating()
-	{
-	 synchronized (lockOnChangingSceneContent)
-	 {
-		updateNodesImmediately = false;
-	 }
-	}
-
-	/** calls processNodesYetToBeSmth() and switches back to the 'online process' mode,
-	    this is designed (yet only) for SINGLE-THREAD application! */
-	public
-	void resumeNodesUpdating()
-	{
-	 synchronized (lockOnChangingSceneContent)
-	 {
-		updateNodesImmediately = true;
-		processNodesYetToBeSmth();
-	 }
-	}
-
-	/** processes (ideally at the same time) and clears the content of
-	    the two buffers (buffers for adding and updating nodes simultaneously) */
-	private
-	void processNodesYetToBeSmth()
-	{
-		for (int i=0; i < nodesYetToBeAddedCnt; ++i)
-			scene.addChild( nodesYetToBeAdded[i] );
-		nodesYetToBeAddedCnt = 0;
-
-		for (int i=0; i < nodesYetToBeUpdatedCnt; ++i)
-			nodesYetToBeUpdated[i].setNeedsUpdate(true);
-		nodesYetToBeUpdatedCnt = 0;
-	}
-
-	/** either registers the node into the Scenery's scene immediately (when in the online
-	    process mode), or registers into the 'nodesYetToBeAdded' buffer (when in the batch
-	    process mode) */
-	private
-	void addChild(final Node node)
-	{
-		if (updateNodesImmediately) scene.addChild(node);
-		else
-		{
-			nodesYetToBeAdded[nodesYetToBeAddedCnt++] = node;
-
-			//overrun protection
-			if (nodesYetToBeAddedCnt == nodesYetToBeAdded.length)
-				processNodesYetToBeSmth();
-		}
-	}
-
-	/** either sets 'needsUpdate' flag of the node immediately (when in the online
-	    process mode), or registers into the 'nodesYetToBeUpdated' buffer to
-	    have it set later (when in the batch process mode) */
-	private
-	void nodeSetNeedsUpdate(final Node node)
-	{
-		if (updateNodesImmediately) node.setNeedsUpdate(true);
-		else
-		{
-			nodesYetToBeUpdated[nodesYetToBeUpdatedCnt++] = node;
-
-			//overrun protection
-			if (nodesYetToBeUpdatedCnt == nodesYetToBeUpdated.length)
-				processNodesYetToBeSmth();
-		}
-	}
-	//----------------------------------------------------------------------------
-
-
 	/** cell forces are typically small in magnitude compared to the cell size,
 	    this defines the current magnification applied when displaying the force vectors */
 	private float vectorsStretch = 1.f;
-	private GLVector vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 	float getVectorsStretch()
 	{ return vectorsStretch; }
@@ -775,15 +730,15 @@ public class DisplayScene extends SceneryBase implements Runnable
 	 {
 		//update the stretch factor...
 		vectorsStretch = vs;
-		vectorsStretchGLvec = new GLVector(vectorsStretch,3);
 
 		//...and rescale all vectors presently existing in the system
-		vectorNodes.values().forEach( n -> n.node.setScale(vectorsStretchGLvec) );
+		vectorNodes.values().forEach( n -> {
+			n.applyScale(vectorsStretch,vec_headLengthRatio);
+			n.node.updateWorld(false,false);
+			n.nodeHead.updateWorld(false,false);
+		} );
 	 }
 	}
-
-	/** shortcut zero vector to prevent from coding "new GLVector(0.f,3)" where needed */
-	private final GLVector zeroGLvec = new GLVector(0.f,3);
 	//----------------------------------------------------------------------------
 
 
@@ -849,7 +804,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.g_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.g_Mode;
 	 }
@@ -868,7 +824,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return cellDebugShown;
 	 }
@@ -914,7 +871,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		vectorsShown.G_Mode ^= true;
 
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return vectorsShown.G_Mode;
 	 }
@@ -933,7 +891,8 @@ public class DisplayScene extends SceneryBase implements Runnable
 		for (Integer ID : lineNodes.keySet())
 			showOrHideMe(ID,lineNodes.get(ID).node,linesShown);
 		for (Integer ID : vectorNodes.keySet())
-			showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			//showOrHideMe(ID,vectorNodes.get(ID).node,vectorsShown);
+			showOrHideMeForVectorSH(ID);
 
 		return generalDebugShown;
 	 }
@@ -945,12 +904,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 	{
 		for (Material m : materials)
 			m.setCullingMode(CullingMode.Front);
+		for (Material m : refMaterials)
+			m.setCullingMode(CullingMode.Front);
 	}
 
 	public
 	void DisableFrontFaceCulling()
 	{
 		for (Material m : materials)
+			m.setCullingMode(CullingMode.None);
+		for (Material m : refMaterials)
 			m.setCullingMode(CullingMode.None);
 	}
 	//----------------------------------------------------------------------------
@@ -1007,15 +970,25 @@ public class DisplayScene extends SceneryBase implements Runnable
 		if (n != null) n.setVisible(vis);
 		return vis;
 	}
+
+	private
+	void showOrHideMeForVectorSH(final int ID)
+	{
+		final VectorSH v = vectorNodes.get(ID);
+		if (v == null)
+			throw new RuntimeException("Invalid vector ID given (ID="+ID+")");
+
+		v.nodeHead.setVisible( showOrHideMe(ID,v.node,vectorsShown) );
+		//NB: sets the same visibility to both nodes, see few lines above
+	}
 	//----------------------------------------------------------------------------
 
 
 	public
 	void reportSettings()
 	{
-		System.out.println("push mode       : " + this.getRenderer().getPushMode() + "  \tscreenshots            : " + savingScreenshots);
+		System.out.println("push mode       : N/A"                                 + "  \tscreenshots            : N/A");
 		System.out.println("garbage collect.: " + garbageCollecting                + "  \ttickCounter            : " + tickCounter);
-		System.out.println("ambient lights  : " + fixedLightsChoosen               + "  \thead lights            : " + headLightsChoosen);
 		System.out.println("scene border    : " + borderShown                      + "  \torientation compass    : " + axesShown);
 
 		System.out.println("visibility      : 'g' 'G'"                                                               +  "\t'g' mode   (cell debug): " + cellDebugShown);
@@ -1031,12 +1004,9 @@ public class DisplayScene extends SceneryBase implements Runnable
 	//----------------------------------------------------------------------------
 
 
-	/**
-	Rotates the node such that its orientation (whatever it is for the node, e.g.
-	the axis of rotational symmetry in a cylinder) given with _normalized_
-	currentNormalizedOrientVec will match the new orientation newOrientVec.
-	The normalized variant of newOrientVec will be stored into the currentNormalizedOrientVec.
-	*/
+	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
+	    the axis of rotational symmetry in a cylinder) given with _normalized_
+	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
 	public
 	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
@@ -1068,6 +1038,16 @@ public class DisplayScene extends SceneryBase implements Runnable
 
 		//System.out.println("rot axis=("+tmpVec.x()+","+tmpVec.y()+","+tmpVec.z()
 		//                   +"), rot angle="+rotAngle+" rad");
+	}
+
+	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
+	    will be stored into the currentNormalizedOrientVec. */
+	public
+	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
+	                  final GLVector currentNormalizedOrientVec,
+	                  final GLVector newOrientVec)
+	{
+		ReOrientNode(node, currentNormalizedOrientVec, newOrientVec);
 
 		//update the current orientation
 		currentNormalizedOrientVec.minusAssign(currentNormalizedOrientVec);

@@ -1,10 +1,39 @@
+/**
+BSD 2-Clause License
+
+Copyright (c) 2019, Vladimír Ulman
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 package de.mpicbg.ulman.simviewer;
 
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import de.mpicbg.ulman.simviewer.aux.Point;
+import de.mpicbg.ulman.simviewer.elements.Point;
 
 /**
  * Operates on a command line and recognizes a list of commands, try
@@ -83,16 +112,10 @@ public class CommandFromCLI implements Runnable
 			System.out.println("h - Shows this help message");
 			System.out.println("q - Quits the program");
 			System.out.println("o - Overviews the current settings");
-			System.out.println("p - Toggles usage of the rendering push mode");
 			System.out.println();
 
 			System.out.println("A - Toggles display of the axes in the scene centre");
 			System.out.println("B - Toggles display of the scene border");
-			System.out.println("I - Toggles between front/back/both/none ramp lights");
-			System.out.println("H - Toggles on/off of camera-attached lights");
-			System.out.println("r,R - Asks Scenery to re-render only-update-signalling/all objects");
-			System.out.println("s - Saves the current content as a screenshot image");
-			System.out.println("S - Toggles automatic saving of screenshots (always after vectors update)");
 			System.out.println();
 
 			System.out.println("P - Adds some cells to have something to display");
@@ -122,12 +145,6 @@ public class CommandFromCLI implements Runnable
 			break;
 		case 'B':
 			System.out.println("Scene border displayed: "+scene.ToggleDisplaySceneBorder());
-			break;
-		case 'I':
-			System.out.println("Current ramp lights: "+scene.ToggleFixedLights());
-			break;
-		case 'H':
-			System.out.println("Current head lights: "+scene.ToggleHeadLights());
 			break;
 
 		case 'P':
@@ -190,27 +207,6 @@ public class CommandFromCLI implements Runnable
 		case 'M':
 			scene.EnableFrontFaceCulling();
 			System.out.println("Front faces NOT displayed");
-			break;
-
-		case 'r':
-			scene.scene.updateWorld(true, false);
-			System.out.println("Scenery refreshed (only those that flag 'update needed')");
-			break;
-		case 'R':
-			scene.scene.updateWorld(true, true);
-			System.out.println("Scenery refreshed (forcily everyone)");
-			break;
-		case 's':
-			scene.saveNextScreenshot();
-			System.out.println("Current content (screenshot) just saved into a file");
-			break;
-		case 'S':
-			scene.savingScreenshots ^= true;
-			System.out.println("Automatic screenshots are now: "+scene.savingScreenshots);
-			break;
-
-		case 'p':
-			System.out.println("Push node is now: "+scene.TogglePushMode());
 			break;
 
 		case 'O':
