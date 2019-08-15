@@ -2,26 +2,32 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>27.0.1</version>
+		<relativePath />
+	</parent>
 
-  <groupId>de.mpicbg.ulman.simviewer</groupId>
-  <artifactId>SimViewer</artifactId>
-  <version>1.0-SNAPSHOT</version>
+	<groupId>de.mpicbg.ulman</groupId>
+	<artifactId>SimViewer</artifactId>
+	<version>1.0-SNAPSHOT-2</version>
 
 	<organization>
 		<name>MPI-CBG</name>
 		<url>http://www.mpi-cbg.de</url>
 	</organization>
 
-  <name>SimViewer</name>
-  <description>See README.md</description>
-  <url>https://github.com/xulman/EmbryoGen</url>
-  <inceptionYear>2017</inceptionYear>
+	<name>SimViewer</name>
+	<description>See README.md</description>
+	<url>https://github.com/xulman/SimViewer</url>
+	<inceptionYear>2017</inceptionYear>
 
-  <packaging>jar</packaging>
+	<packaging>jar</packaging>
 	<licenses>
 		<license>
-			<name>CC0 1.0 Universal License</name>
-			<url>http://creativecommons.org/publicdomain/zero/1.0/</url>
+			<name>BSD-2-Clause</name>
+			<url>https://choosealicense.com/licenses/bsd-2-clause/</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -57,45 +63,65 @@
 
 
 	<scm>
-		<connection>scm:git:git://github.com/xulman/EmbryoGen</connection>
-		<developerConnection>scm:git:localhost:9999</developerConnection>
+		<connection>scm:git:git://github.com/xulman/SimViewer</connection>
+		<developerConnection>scm:git:git://github.com/xulman/SimViewer</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/xulman/EmbryoGen</url>
+		<url>https://github.com/xulman/SimViewer</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>http://github.com/xulman/EmbryoGen/issues</url>
+		<url>http://github.com/xulman/SimViewer/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
 	</ciManagement>
 
 	<properties>
-		<license.licenseName>cc0</license.licenseName>
-		<license.copyrightOwners>N/A</license.copyrightOwners>
-		<license.projectName>EmbryoGen</license.projectName>
+		<license.licenseName>BSD simplified (2 clause)</license.licenseName>
+		<license.copyrightOwners>Vladimír Ulman</license.copyrightOwners>
+		<license.projectName>SimViewer</license.projectName>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<package-name>de.mpicbg.ulman.simviewer</package-name>
 	</properties>
 
-  <repositories>
-    <repository>
-      <id>imagej.public</id>
-      <url>http://maven.imagej.net/content/groups/public</url>
-    </repository>
-  </repositories>
+	<repositories>
+		<repository>
+			<id>imagej.public</id>
+			<url>http://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.zeromq</groupId>
-      <artifactId>jeromq</artifactId>
-      <version>0.5.1</version>
-    </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>org.zeromq</groupId>
+			<artifactId>jeromq</artifactId>
+			<version>0.5.1</version>
+		</dependency>
 
-    <dependency>
-      <groupId>graphics.scenery</groupId>
-      <artifactId>scenery</artifactId>
-      <version>0.7.0-beta-3</version>
-    </dependency>
-  </dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.9</version>
+		</dependency>
+
+		<dependency>
+			<groupId>sc.iview</groupId>
+			<artifactId>sciview</artifactId>
+			<version>0.2.0-beta-2-SNAPSHOT</version>
+
+			<exclusions>
+				<exclusion>
+					<groupId>net.coremem</groupId>
+					<artifactId>CoreMem</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>graphics.scenery</groupId>
+			<artifactId>scenery</artifactId>
+			<version>0.7.0-beta-6-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
 </project>
