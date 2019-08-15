@@ -1,9 +1,41 @@
-package de.mpicbg.ulman.simviewer.aux;
+/**
+BSD 2-Clause License
+
+Copyright (c) 2019, Vladimír Ulman
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
+package de.mpicbg.ulman.simviewer.util;
 
 import java.util.Locale;
 import java.util.Scanner;
 
-import de.mpicbg.ulman.simviewer.DisplayScene;
+import sc.iview.simviewer.DisplayScene;
+import sc.iview.simviewer.elements.Point;
+import sc.iview.simviewer.elements.Line;
+import sc.iview.simviewer.elements.Vector;
 
 /**
  * A class to parse the messages according the "network-protocol" and
@@ -71,8 +103,6 @@ public class NetMessagesProcessor
 		s.next();
 		final int N = s.nextInt();
 
-		if (N > 10) scene.suspendNodesUpdating();
-
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
 		{
@@ -109,8 +139,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -125,8 +153,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -150,13 +176,13 @@ public class NetMessagesProcessor
 
 			//now read the first in the pair and save coordinates
 			int d=0;
-			for (; d < D && d < 3; ++d) l.posA.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) l.base.set(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
 			//now read the second in the pair and save sizes
 			d=0;
-			for (; d < D && d < 3; ++d) l.posB.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) l.vector.set(d, s.nextFloat() - l.base.get(d));
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
@@ -166,8 +192,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -182,8 +206,6 @@ public class NetMessagesProcessor
 		s.next();
 		s.next();
 		final int N = s.nextInt();
-
-		if (N > 10) scene.suspendNodesUpdating();
 
 		//is the next token 'dim'?
 		if (s.next("dim").startsWith("dim") == false)
@@ -223,8 +245,6 @@ public class NetMessagesProcessor
 		}
 
 		s.close();
-
-		if (N > 10) scene.resumeNodesUpdating();
 	}
 
 
@@ -243,24 +263,7 @@ public class NetMessagesProcessor
 	{
 		System.out.println("NetMessagesProcessor: Got tick message: "+msg);
 
-		//check if we should save the screen
-		if (scene.savingScreenshots)
-		{
-			//give scenery some grace time to redraw everything
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				//a bit unexpected to be stopped here, so we leave a note and forward the exception upstream
-				System.out.println("NetMessagesProcessor: Interrupted just before requesting a screen shot:");
-				e.printStackTrace();
-				throw e;
-			}
-
-			scene.saveNextScreenshot();
-		}
-
 		if (scene.garbageCollecting) scene.garbageCollect();
-
 		scene.increaseTickCounter();
 	}
 }
