@@ -87,7 +87,8 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	@Parameter
 	private LogService log;
 
-	private ImgPlus<T> img; //to be yet instantiated in this.run()
+	private ImgPlus<T> img;   //to be yet instantiated in this.run()
+	private Thread imgFeeder; //to be yet instantiated in this.run()
 
 
 	@Override
@@ -102,49 +103,21 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//create and associate the container with a soon-to-be-displayed Dataset
 		d = new DefaultDataset(log.getContext(),img);
 
+		//start the image feeder
+		imgFeeder = new Thread( new ImageFeeder() );
+		imgFeeder.start();
+
 		//final remark, the initialization is done by now
 		log.info("ImgViewer: started @ localhost:"+port);
+	}
 
-
-		//place some initial fake values
-		final Cursor<T> c = img.cursor();
-		int cnt = 0;
-		while (c.hasNext())
-			c.next().setReal(cnt++);
-
-
-		//create some fake updater to see the Dataset window changing content "randomly"
-		final Thread imgUpdater = new Thread("ImgViewer Updater")
-		{
-			@Override
-			public void run()
-			{
-			    int changesCnt=0;
-			    int cnt = 0;
-			    while (changesCnt < 10)
-				{
-					try {
-						Thread.sleep(4000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					c.reset();
-					while (c.hasNext())
-						c.next().setReal(cnt++);
-					d.update();
-
-					++changesCnt;
-				}
-			}
-		};
-		imgUpdater.start();
-
-		//start up another thread that
-		//  - will be receiving images via network connection
-		//  - will be storing a buffer of last N images
-		//  - will be pushing image chosen from the buffer to the PlanarImg and asking Fiji to re-draw
-		//
+	@Override
+	protected void finalize()
+	throws Throwable
+	{
+		imgFeeder.interrupt();
+		log.info("ImgViewer: stopping...");
+		super.finalize();
 	}
 
 
@@ -185,6 +158,46 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//notify the wrapping Dataset about the new content of the container image
 		d.update();
 	}
+
+
+	class ImageFeeder implements Runnable
+	{
+		public
+		ImageFeeder(final int port)
+		{
+			//init img transfer
+
+			//fake: init the fake img
+			this.img = PlanarImgs.unsignedShorts(xSize, ySize, zSize);
+		}
+
+		@Override
+		public void run()
+		{
+			//loop and listen for new incoming images
+
+			//fake: adjust the fake img
+			int changesCnt=1;
+			while (changesCnt < 11)
+			{
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				Cursor<UnsignedShortType> c = this.img.cursor();
+				while (c.hasNext())
+					c.next().setReal(changesCnt);
+
+				insertNextImage((Img)this.img);
+				++changesCnt;
+			}
+		}
+
+		Img<UnsignedShortType> img;
+	}
+
 
 	//----------------------------------------------------------------------------
 	/**
