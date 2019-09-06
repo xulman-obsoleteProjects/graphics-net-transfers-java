@@ -43,8 +43,10 @@ import net.imagej.DefaultDataset;
 
 import net.imglib2.img.Img;
 import net.imglib2.img.planar.PlanarImgs;
-import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 import net.imglib2.Cursor;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import net.imagej.ImageJ; //for the main()
 
@@ -101,7 +103,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		d = new DefaultDataset(log.getContext(),img);
 
 		//final remark, the initialization is done by now
-		log.info("ImgViewer started @ localhost:"+port);
+		log.info("ImgViewer: started @ localhost:"+port);
 
 
 		//place some initial fake values
@@ -143,6 +145,45 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//  - will be storing a buffer of last N images
 		//  - will be pushing image chosen from the buffer to the PlanarImg and asking Fiji to re-draw
 		//
+	}
+
+
+	private <NT extends RealType<NT>>
+	void insertNextImage(final Img<NT> newImg)
+	{
+		//the x,y,z image sizes should match... (at least for now)
+		if (img.dimension(0) != newImg.dimension(0)
+		 || img.dimension(1) != newImg.dimension(1)
+		 || (newImg.numDimensions() == 2 && img.dimension(2) != 1)
+		 || (newImg.numDimensions() == 3 && img.dimension(2) != newImg.dimension(2)))
+			throw new RuntimeException("Not adding next image of incompatible size.");
+
+		//number of pixels of one image (NB: img is PlanarImg)
+		final long pxCnt = img.dimension(0) * img.dimension(1) * img.dimension(2);
+
+		//plan:
+		//we move t into t-1 iff img.dimension(3) > 1
+		//we move newImg into t
+
+		//NB: img is PlanarImg
+		Cursor<T> source = img.cursor();
+		Cursor<T> target = img.cursor();
+
+		//advance source to 2nd timepoint (if it is available)
+		if (img.dimension(3) > 1)
+			for (long c = 0; c < pxCnt; ++c) source.next();
+
+		//"shift" timepoints
+		for (long t = 1; t < img.dimension(3); ++t)
+			for (long c = 0; c < pxCnt; ++c) target.next().set( source.next() );
+
+		Cursor<NT> nSource = Views.flatIterable(newImg).cursor();
+		for (long c = 0; c < pxCnt; ++c) target.next().setReal( nSource.next().getRealFloat() );
+
+		log.info("ImgViewer: added a new image");
+
+		//notify the wrapping Dataset about the new content of the container image
+		d.update();
 	}
 
 	//----------------------------------------------------------------------------
