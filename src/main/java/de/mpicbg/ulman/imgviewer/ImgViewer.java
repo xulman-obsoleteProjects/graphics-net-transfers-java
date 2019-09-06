@@ -41,12 +41,12 @@ import net.imagej.ImgPlus;
 import net.imagej.Dataset;
 import net.imagej.DefaultDataset;
 
+import net.imglib2.img.Img;
 import net.imglib2.img.planar.PlanarImgs;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.Cursor;
 
-//for the main:
-import net.imagej.ImageJ;
+import net.imagej.ImageJ; //for the main()
 
 
 /**
@@ -55,16 +55,17 @@ import net.imagej.ImageJ;
  * @author Vladimir Ulman
  */
 @Plugin(type = Command.class, menuPath = "ImgViewer", name = "ImgViewer")
-public class ImgViewer implements Command
+public class ImgViewer<T extends RealType<T>> implements Command
 {
-	@Parameter
-	private LogService log;
-
 	@Parameter(label = "TCP/IP port to listen at:", min="1024")
 	private int port = 5678;
 
 	@Parameter(label = "Title of the displayed window:")
 	private String windowTitle = "ImgViewer @ localhost:"+port;
+
+	@Parameter(label = "Pixel type of the displayed images:",
+	           choices = {"float","16 bit"})
+	private String pixelTypeStr = "float";
 
 	@Parameter(label = "Width of the displayed images (X):", min="1")
 	private int xSize = 200;
@@ -81,14 +82,20 @@ public class ImgViewer implements Command
 	@Parameter(type = OUTPUT)
 	public Dataset d;
 
+	@Parameter
+	private LogService log;
+
+	private ImgPlus<T> img; //to be yet instantiated in this.run()
+
 
 	@Override
 	public void run()
 	{
 		//create a "voxel container" image
-		final ImgPlus<UnsignedShortType> img
-			= new ImgPlus<>( PlanarImgs.unsignedShorts(xSize, ySize, zSize, tSize),
-			windowTitle, new AxisType[] { Axes.X, Axes.Y, Axes.Z, Axes.TIME} );
+		final Img<T> i = pixelTypeStr.startsWith("fl")
+			? (Img)PlanarImgs.floats(        xSize, ySize, zSize, tSize)
+			: (Img)PlanarImgs.unsignedShorts(xSize, ySize, zSize, tSize);
+		img = new ImgPlus<>( i, windowTitle, new AxisType[] {Axes.X, Axes.Y, Axes.Z, Axes.TIME} );
 
 		//create and associate the container with a soon-to-be-displayed Dataset
 		d = new DefaultDataset(log.getContext(),img);
@@ -98,10 +105,10 @@ public class ImgViewer implements Command
 
 
 		//place some initial fake values
-		final Cursor<UnsignedShortType> c = img.cursor();
+		final Cursor<T> c = img.cursor();
 		int cnt = 0;
 		while (c.hasNext())
-			c.next().set(cnt++);
+			c.next().setReal(cnt++);
 
 
 		//create some fake updater to see the Dataset window changing content "randomly"
@@ -122,7 +129,7 @@ public class ImgViewer implements Command
 
 					c.reset();
 					while (c.hasNext())
-						c.next().set(cnt++);
+						c.next().setReal(cnt++);
 					d.update();
 
 					++changesCnt;
