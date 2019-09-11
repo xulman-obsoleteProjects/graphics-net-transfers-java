@@ -33,6 +33,7 @@ import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 import org.scijava.command.Command; //plugin itself
+import org.scijava.command.CommandService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -57,6 +58,8 @@ import javax.swing.*;               //network Control Panel
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.imagej.ImageJ; //for the main()
 
@@ -97,6 +100,9 @@ public class ImgViewer<T extends RealType<T>> implements Command
 
 	@Parameter
 	private LogService log;
+
+	@Parameter
+	private CommandService cs;
 
 	private ImgPlus<T> img;   //to be yet instantiated in this.run()
 	private Thread imgFeeder; //to be yet instantiated in this.run()
@@ -247,13 +253,19 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	{
 		frame = new JFrame("Control panel of "+windowTitle);
 
+		final ActionListener actionStop    = new ThreadStopper(worker);
+		final ActionListener actionRestart = new PluginRestarter(actionStop);
+
 		final List txt = CPlog.getList();
-		final Button btn = new Button("Click here to stop receiving images");
-		btn.addActionListener( new ButtonHandler(worker) );
+		final Button btnStop = new Button("Click here: Stop receiving images");
+		final Button btnRest = new Button("Click here: Restart in a new instance");
+		btnStop.addActionListener( actionStop );
+		btnRest.addActionListener( actionRestart );
 
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
 		frame.add(txt);
-		frame.add(btn);
+		frame.add(btnStop);
+		frame.add(btnRest);
 		frame.setMinimumSize(new Dimension(300, 500));
 		frame.setVisible(true);
 	}
@@ -293,6 +305,35 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			//we signal to the main loop (in ImageFeeder.run()) to stop too
 			keepListening = false;
 			threadToSignalToStop.interrupt();
+		}
+	}
+
+	//button handler to set this.keepListening = false and send interrupt() to the ImageFeeder
+	class PluginRestarter implements ActionListener
+	{
+		private final ActionListener stopper;
+
+		PluginRestarter(final ActionListener threadStopper)
+		{ stopper = threadStopper; }
+
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			//perform as if "Stop" button is pressed
+			stopper.actionPerformed(null);
+
+			//(re)start this ImgViewer plugin again, and feed it
+			//with current values of all parameters, well, and
+			//with a modified windowTitle
+			Map<String,Object> newArgs = new HashMap<>(8);
+			newArgs.put("port",         port);
+			newArgs.put("windowTitle",  windowTitle.concat("#"));
+			newArgs.put("pixelTypeStr", pixelTypeStr);
+			newArgs.put("xSize",        xSize);
+			newArgs.put("ySize",        ySize);
+			newArgs.put("zSize",        zSize);
+			newArgs.put("tSize",        tSize);
+			cs.run(ImgViewer.class, true, newArgs);
 		}
 	}
 
