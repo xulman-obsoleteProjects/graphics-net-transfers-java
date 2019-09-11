@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.imgviewer;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+import de.mpicbg.ulman.imgtransfer.ProgressCallback;
 
 import org.scijava.command.Command; //plugin itself
 import org.scijava.log.LogService;
@@ -113,11 +114,14 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//create and associate the container with a soon-to-be-displayed Dataset
 		d = new DefaultDataset(log.getContext(),img);
 
-		//start the image feeder
+		//create our own logger (which happens to be an AWT's List)
+		CPlog = new ControlPanelLogger();
+
+		//start the image feeder (will use the this.CPlog)
 		imgFeeder = new Thread( new ImageFeeder() );
 		imgFeeder.start();
 
-		//create and associate with it its "control panel"
+		//create and associate with it its "control panel" (will also use this.CPlog)
 		connectControlPanel(imgFeeder);
 	}
 
@@ -182,7 +186,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		{
 			final int timeOutWhileConnectionOpened = 300;
 
-			ImgTransfer Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, null);
+			ImgTransfer Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, CPlog);
 			log.info("ImgViewer: started @ localhost:"+port);
 
 			//loop and listen for new incoming images
@@ -205,7 +209,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 						log.info("ImgViewer: received no image, waiting 30 secs before listening again");
 						Thread.sleep(30000);
 						waitBeforeListen = false;
-						Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, null);
+						Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, CPlog);
 						log.info("ImgViewer: started @ localhost:"+port);
 					}
 				}
@@ -214,7 +218,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 					waitBeforeListen = true;
 				}
 				catch (IOException | InterruptedException e) {
-					e.printStackTrace();
+					e.printStackTrace(System.out);
 					keepListening = false;
 				}
 			}
@@ -235,35 +239,51 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	//----------------------------------------------------------------------------
 	//the main handle to the Control Panel
 	private JFrame frame = null;
+	private ControlPanelLogger CPlog = null;
 
 	private
 	void connectControlPanel(final Thread worker)
 	{
 		frame = new JFrame("Control panel of "+windowTitle);
 
-		//final TextArea txt = new ....
-
+		final List txt = CPlog.getList();
 		final Button btn = new Button("Click here to stop receiving images");
 		btn.addActionListener( new ButtonHandler(worker) );
 
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
-		//frame.add(txt);
+		frame.add(txt);
 		frame.add(btn);
-		frame.setMinimumSize(new Dimension(300, 100));
-		frame.setLocationByPlatform(true);
+		frame.setMinimumSize(new Dimension(300, 800));
 		frame.setVisible(true);
+	}
+
+
+	class ControlPanelLogger implements ProgressCallback
+	{
+		final List log;
+
+		ControlPanelLogger()
+		{
+			log = new List(30);
+			log.add("Internal network status:");
+		}
+
+		List getList() { return log; }
+
+		@Override
+		public void info(String msg) { log.add(msg); } //TODO: perhaps start trimming the log if too log
+		@Override
+		public void setProgress(float howFar) {}
 	}
 
 
 	//button handler to set this.keepListening = false and send interrupt() to the ImageFeeder
 	class ButtonHandler implements ActionListener
 	{
-		private Thread workerToSignalStop;
+		private final Thread workerToSignalStop;
 
 		ButtonHandler(final Thread workerToBeControlled)
-		{
-			workerToSignalStop = workerToBeControlled;
-		}
+		{ workerToSignalStop = workerToBeControlled; }
 
 		@Override
 		public void actionPerformed(ActionEvent e)
