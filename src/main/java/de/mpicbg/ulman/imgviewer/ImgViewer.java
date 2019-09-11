@@ -31,6 +31,7 @@ package de.mpicbg.ulman.imgviewer;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import java.io.IOException;
+import java.net.ProtocolException;
 
 import org.scijava.command.Command;
 import org.scijava.log.LogService;
@@ -109,9 +110,6 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//start the image feeder
 		imgFeeder = new Thread( new ImageFeeder() );
 		imgFeeder.start();
-
-		//final remark, the initialization is done by now
-		log.info("ImgViewer: started @ localhost:"+port);
 	}
 
 	@Override
@@ -119,7 +117,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	throws Throwable
 	{
 		imgFeeder.interrupt();
-		log.info("ImgViewer: stopping...");
+		log.info("ImgViewer: quitting...");
 		super.finalize();
 	}
 
@@ -127,6 +125,9 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	private <NT extends RealType<NT>>
 	void insertNextImage(final Img<NT> newImg)
 	{
+		if (newImg == null)
+			throw new RuntimeException("Not adding null-ptr image.");
+
 		//the x,y,z image sizes should match... (at least for now)
 		if (img.dimension(0) != newImg.dimension(0)
 		 || img.dimension(1) != newImg.dimension(1)
@@ -168,29 +169,45 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		@Override
 		public void run()
 		{
+			final int timeOutWhileConnectionOpened = 300;
+
+			ImgTransfer Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, null);
+			log.info("ImgViewer: started @ localhost:"+port);
+
 			//loop and listen for new incoming images
+			boolean waitBeforeListen = false;
 			boolean keepListening = true;
-			boolean shouldWait = false;
 			while (keepListening)
 			{
 				try {
-					if (shouldWait)
+					final ImgPlus<?> i = !waitBeforeListen ? Receiver.receiveImage() : null;
+					if (i != null)
 					{
-						Thread.sleep(20000); //20 secs
-						shouldWait = false;
+						//got some, insert it
+						insertNextImage( (Img)i );
 					}
-					insertNextImage( (Img)ImgTransfer.receiveImage(port,600) );
+					else
+					{
+						//got nothing, that also means that the Receiver automatically closed itself,
+						//wait 30 secs (a grace time, essentially) and re-open it again
+						log.info("ImgViewer: received no image, waiting 30 secs before listening again");
+						Thread.sleep(30000);
+						waitBeforeListen = false;
+						Receiver = new ImgTransfer(port, timeOutWhileConnectionOpened, null);
+						log.info("ImgViewer: started @ localhost:"+port);
+					}
+				}
+				catch (ProtocolException e) {
+					log.warn(e.getMessage());
+					waitBeforeListen = true;
 				}
 				catch (IOException | InterruptedException e) {
 					e.printStackTrace();
 					keepListening = false;
 				}
-				catch (RuntimeException e) {
-					log.warn(e.getMessage());
-					log.warn("ImgViewer: will wait 20 secs before listening again");
-					shouldWait = true;
-				}
 			}
+
+			log.info("ImgViewer: not listening now");
 		}
 	}
 
