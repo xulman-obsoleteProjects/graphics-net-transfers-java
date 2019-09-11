@@ -30,26 +30,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.imgviewer;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
-import java.io.IOException;
-import java.net.ProtocolException;
 
-import org.scijava.command.Command;
+import org.scijava.command.Command; //plugin itself
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import static org.scijava.ItemIO.*;
 
-import net.imagej.axis.Axes;
+import net.imagej.axis.Axes;        //image container - showing
 import net.imagej.axis.AxisType;
 import net.imagej.ImgPlus;
 import net.imagej.Dataset;
 import net.imagej.DefaultDataset;
 
-import net.imglib2.img.Img;
+import net.imglib2.img.Img;         //image container - updating
 import net.imglib2.img.planar.PlanarImgs;
 import net.imglib2.view.Views;
 import net.imglib2.Cursor;
 import net.imglib2.type.numeric.RealType;
+
+import java.io.IOException;         //network issues handling
+import java.net.ProtocolException;
+
+import javax.swing.*;               //network Control Panel
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import net.imagej.ImageJ; //for the main()
 
@@ -110,6 +116,9 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		//start the image feeder
 		imgFeeder = new Thread( new ImageFeeder() );
 		imgFeeder.start();
+
+		//create and associate with it its "control panel"
+		connectControlPanel(imgFeeder);
 	}
 
 	@Override
@@ -162,6 +171,10 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	}
 
 
+	//----------------------------------------------------------------------------
+	//internal yet shared flag to possibly stop the network_listening+image_adding
+	private boolean keepListening = true;
+
 	class ImageFeeder implements Runnable
 	{
 		@Override
@@ -175,7 +188,6 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			//loop and listen for new incoming images
 			int addedImgCnt = 0;
 			boolean waitBeforeListen = false;
-			boolean keepListening = true;
 			while (keepListening)
 			{
 				try {
@@ -208,6 +220,58 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			}
 
 			log.info("ImgViewer: not listening now");
+
+			//close the control panel
+			if (frame != null)
+			{
+				frame.setVisible(false);  //don't show
+				frame.dispose();          //clear resources
+				frame = null;
+			}
+		}
+	}
+
+
+	//----------------------------------------------------------------------------
+	//the main handle to the Control Panel
+	private JFrame frame = null;
+
+	private
+	void connectControlPanel(final Thread worker)
+	{
+		frame = new JFrame("Control panel of "+windowTitle);
+
+		//final TextArea txt = new ....
+
+		final Button btn = new Button("Click here to stop receiving images");
+		btn.addActionListener( new ButtonHandler(worker) );
+
+		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
+		//frame.add(txt);
+		frame.add(btn);
+		frame.setMinimumSize(new Dimension(300, 100));
+		frame.setLocationByPlatform(true);
+		frame.setVisible(true);
+	}
+
+
+	//button handler to set this.keepListening = false and send interrupt() to the ImageFeeder
+	class ButtonHandler implements ActionListener
+	{
+		private Thread workerToSignalStop;
+
+		ButtonHandler(final Thread workerToBeControlled)
+		{
+			workerToSignalStop = workerToBeControlled;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e)
+		{
+			//sending interrupt() typically works, but to be on the safe side
+			//we signal to the main loop (in ImageFeeder.run()) to stop too
+			keepListening = false;
+			workerToSignalStop.interrupt();
 		}
 	}
 
