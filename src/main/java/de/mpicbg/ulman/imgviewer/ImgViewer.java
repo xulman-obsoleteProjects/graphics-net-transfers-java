@@ -118,6 +118,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		CPlog = new ControlPanelLogger();
 
 		//start the image feeder (will use the this.CPlog)
+		keepListening = true;
 		imgFeeder = new Thread( new ImageFeeder() );
 		imgFeeder.start();
 
@@ -177,7 +178,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 
 	//----------------------------------------------------------------------------
 	//internal yet shared flag to possibly stop the network_listening+image_adding
-	private boolean keepListening = true;
+	private boolean keepListening;
 
 	class ImageFeeder implements Runnable
 	{
@@ -253,7 +254,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
 		frame.add(txt);
 		frame.add(btn);
-		frame.setMinimumSize(new Dimension(300, 800));
+		frame.setMinimumSize(new Dimension(300, 500));
 		frame.setVisible(true);
 	}
 
@@ -264,7 +265,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 
 		ControlPanelLogger()
 		{
-			log = new List(30);
+			log = new List(20);
 			log.add("Internal network status:");
 		}
 
@@ -278,12 +279,12 @@ public class ImgViewer<T extends RealType<T>> implements Command
 
 
 	//button handler to set this.keepListening = false and send interrupt() to the ImageFeeder
-	class ButtonHandler implements ActionListener
+	class ThreadStopper implements ActionListener
 	{
-		private final Thread workerToSignalStop;
+		private final Thread threadToSignalToStop;
 
-		ButtonHandler(final Thread workerToBeControlled)
-		{ workerToSignalStop = workerToBeControlled; }
+		ThreadStopper(final Thread threadToBeControlled)
+		{ threadToSignalToStop = threadToBeControlled; }
 
 		@Override
 		public void actionPerformed(ActionEvent e)
@@ -291,7 +292,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			//sending interrupt() typically works, but to be on the safe side
 			//we signal to the main loop (in ImageFeeder.run()) to stop too
 			keepListening = false;
-			workerToSignalStop.interrupt();
+			threadToSignalToStop.interrupt();
 		}
 	}
 
