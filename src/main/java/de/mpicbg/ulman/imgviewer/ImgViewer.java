@@ -157,8 +157,6 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		Cursor<NT> nSource = Views.flatIterable(newImg).cursor();
 		for (long c = 0; c < pxCnt; ++c) target.next().setReal( nSource.next().getRealFloat() );
 
-		log.info("ImgViewer: added a new image");
-
 		//notify the wrapping Dataset about the new content of the container image
 		d.update();
 	}
@@ -175,6 +173,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			log.info("ImgViewer: started @ localhost:"+port);
 
 			//loop and listen for new incoming images
+			int addedImgCnt = 0;
 			boolean waitBeforeListen = false;
 			boolean keepListening = true;
 			while (keepListening)
@@ -184,6 +183,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 					if (i != null)
 					{
 						//got some, insert it
+						log.info("ImgViewer: added a new image, #" + ++addedImgCnt);
 						insertNextImage( (Img)i );
 					}
 					else
