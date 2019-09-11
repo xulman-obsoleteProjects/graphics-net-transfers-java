@@ -29,6 +29,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.imgviewer;
 
+import de.mpicbg.ulman.imgtransfer.ImgTransfer;
+import java.io.IOException;
+
 import org.scijava.command.Command;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
@@ -46,9 +49,9 @@ import net.imglib2.img.planar.PlanarImgs;
 import net.imglib2.view.Views;
 import net.imglib2.Cursor;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import net.imagej.ImageJ; //for the main()
+
 
 
 /**
@@ -56,11 +59,11 @@ import net.imagej.ImageJ; //for the main()
  *
  * @author Vladimir Ulman
  */
-@Plugin(type = Command.class, menuPath = "ImgViewer", name = "ImgViewer")
+@Plugin(type = Command.class, menuPath = "Plugins>ImgViewer", name = "ImgViewer")
 public class ImgViewer<T extends RealType<T>> implements Command
 {
 	@Parameter(label = "TCP/IP port to listen at:", min="1024")
-	private int port = 5678;
+	private int port = 54545;
 
 	@Parameter(label = "Title of the displayed window:")
 	private String windowTitle = "ImgViewer @ localhost:"+port;
@@ -162,49 +165,37 @@ public class ImgViewer<T extends RealType<T>> implements Command
 
 	class ImageFeeder implements Runnable
 	{
-		public
-		ImageFeeder(final int port)
-		{
-			//init img transfer
-
-			//fake: init the fake img
-			this.img = PlanarImgs.unsignedShorts(xSize, ySize, zSize);
-		}
-
 		@Override
 		public void run()
 		{
 			//loop and listen for new incoming images
-
-			//fake: adjust the fake img
-			int changesCnt=1;
-			while (changesCnt < 11)
+			boolean keepListening = true;
+			boolean shouldWait = false;
+			while (keepListening)
 			{
 				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+					if (shouldWait)
+					{
+						Thread.sleep(20000); //20 secs
+						shouldWait = false;
+					}
+					insertNextImage( (Img)ImgTransfer.receiveImage(port,600) );
 				}
-
-				Cursor<UnsignedShortType> c = this.img.cursor();
-				while (c.hasNext())
-					c.next().setReal(changesCnt);
-
-				insertNextImage((Img)this.img);
-				++changesCnt;
+				catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+					keepListening = false;
+				}
+				catch (RuntimeException e) {
+					log.warn(e.getMessage());
+					log.warn("ImgViewer: will wait 20 secs before listening again");
+					shouldWait = true;
+				}
 			}
 		}
-
-		Img<UnsignedShortType> img;
 	}
 
 
 	//----------------------------------------------------------------------------
-	/**
-	 * Entry point for testing SciView functionality.
-	 *
-	 * @author Kyle Harrington
-	 */
 	public static void main( String... args )
 	{
 		//start up our own Fiji/Imagej2
