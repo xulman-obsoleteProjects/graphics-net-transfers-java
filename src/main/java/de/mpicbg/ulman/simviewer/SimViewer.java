@@ -83,9 +83,8 @@ public class SimViewer implements Command
 	{
 		log.info("SimViewer initializing");
 
-		//setup the original sciView scene
-		sciView.getFloor().setVisible(false);
-		disableVisibleLights();
+		//prepare the original SciView scene
+		disableFloorAndVisibleLights();
 
 		//setup the SimViewer's playground..
 		DisplayScene scene = new DisplayScene(sciView,
@@ -151,6 +150,10 @@ public class SimViewer implements Command
 
 	public void stop()
 	{
+		//this makes sure that the SciView is not left with some of the SimViewer's node
+		//chosen as active (which would result in an ugly "null" message in the log)
+		sciView.setActiveNode(sciView.getFloor());
+
 		//close SimViewer's aux services
 		if (NETcontrol != null && NETcontrol.isAlive()) NETcontrol.interrupt();
 		NETcontrol = null;
@@ -166,14 +169,22 @@ public class SimViewer implements Command
 			scene = null;
 		}
 
+		//restore the original SciView scene
+		enableFloorAndDisabledLights();
+
 		log.info("SimViewer stopped");
 	}
 
-	//----------------------------------------------------------------------------
-	List<Node> disabledLights = new ArrayList<>(10);
 
-	private void disableVisibleLights()
+	//----------------------------------------------------------------------------
+	private boolean floorOriginalVisibilityState = true;
+	private final List<Node> disabledLights = new ArrayList<>(10);
+
+	private void disableFloorAndVisibleLights()
 	{
+		floorOriginalVisibilityState = sciView.getFloor().getVisible();
+		sciView.getFloor().setVisible(false);
+
 		for (Node n : sciView.getAllSceneNodes())
 		{
 			//debug:
@@ -189,14 +200,18 @@ public class SimViewer implements Command
 		for (Node n : disabledLights) { log.info("disabled light: "+n.getName()); }
 	}
 
-	private void enableDisabledLights()
+	private void enableFloorAndDisabledLights()
 	{
-		for (Node n : disabledLights)
+		Iterator<Node> i = disabledLights.iterator();
+		while (i.hasNext())
 		{
-			n.setVisible(true);
-			disabledLights.remove(n);
+			i.next().setVisible(true);
+			i.remove();
 		}
+
+		sciView.getFloor().setVisible(floorOriginalVisibilityState);
 	}
+
 
 	//----------------------------------------------------------------------------
 	/**
