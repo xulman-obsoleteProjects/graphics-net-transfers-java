@@ -154,11 +154,16 @@ public class DisplayScene
 		scene.addChild(refVectorNode_Head);
 	}
 
-	/** attempts to close this rendering window */
+	/** attempts to clean up and close this rendering window */
 	public
 	void stop()
 	{
-		//this.close();
+		if (fixedLights != null) RemoveFixedLightsRamp();
+		if (axesData != null) RemoveDisplayAxes();
+		if (borderData != null) RemoveDisplaySceneBorder();
+
+		//remove the rest of the SimViewer, which is now only the remaining user's data...
+		sciView.deleteNode(scene);
 	}
 	//----------------------------------------------------------------------------
 
@@ -209,47 +214,73 @@ public class DisplayScene
 	private boolean   axesShown = false;
 
 	public
+	void CreateDisplayAxes()
+	{
+		//remove any old axes, if they exist at all...
+		RemoveDisplayAxes();
+
+		axesData = new Cylinder[] {
+			new Cylinder(1.0f,30.f,4),
+			new Cylinder(1.0f,30.f,4),
+			new Cylinder(1.0f,30.f,4)};
+
+		//set material - color
+		//NB: RGB colors ~ XYZ axes
+		axesData[0].setMaterial(materials[1]);
+		axesData[1].setMaterial(materials[2]);
+		axesData[2].setMaterial(materials[3]);
+
+		axesData[0].setName("compass axis: X");
+		axesData[1].setName("compass axis: Y");
+		axesData[2].setName("compass axis: Z");
+
+		//set orientation for x,z axes
+		ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+		ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
+
+		//place all axes into the scene centre
+		final GLVector centre = new GLVector(
+			(sceneOffset[0] + 0.5f*sceneSize[0]),
+			(sceneOffset[1] + 0.5f*sceneSize[1]),
+			(sceneOffset[2] + 0.5f*sceneSize[2]));
+
+		for (Cylinder a : axesData)
+		{
+			a.setPosition(centre);
+			a.setVisible(false);
+			scene.addChild(a);
+		}
+
+		axesShown = false;
+	}
+
+	public
+	void RemoveDisplayAxes()
+	{
+		if (axesData == null) return;
+
+		for (Cylinder a : axesData) scene.removeChild(a);
+
+		axesData = null;
+		axesShown = false;
+	}
+
+	public
 	boolean ToggleDisplayAxes()
 	{
 		//first run, init the data
 		if (axesData == null)
 		{
-			axesData = new Cylinder[] {
-				new Cylinder(1.0f,30.f,4),
-				new Cylinder(1.0f,30.f,4),
-				new Cylinder(1.0f,30.f,4)};
-
-			//set material - color
-			//NB: RGB colors ~ XYZ axes
-			axesData[0].setMaterial(materials[1]);
-			axesData[1].setMaterial(materials[2]);
-			axesData[2].setMaterial(materials[3]);
-
-			//set orientation for x,z axes
-			ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-			ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
-
-			//place all axes into the scene centre
-			final GLVector centre = new GLVector(
-				(sceneOffset[0] + 0.5f*sceneSize[0]),
-				(sceneOffset[1] + 0.5f*sceneSize[1]),
-				(sceneOffset[2] + 0.5f*sceneSize[2]));
-			axesData[0].setPosition(centre);
-			axesData[1].setPosition(centre);
-			axesData[2].setPosition(centre);
-
-			axesData[0].setName("compass axis: X");
-			axesData[1].setName("compass axis: Y");
-			axesData[2].setName("compass axis: Z");
+			System.out.println("Creating compass axes before turning them on...");
+			CreateDisplayAxes();
 		}
-
-		//add-or-remove from the scene
-		for (Node n : axesData)
-			if (axesShown) scene.removeChild(n);
-			else           scene.addChild(n);
 
 		//toggle the flag
 		axesShown ^= true;
+
+		//adjust the visibility
+		for (Node n : axesData)
+			n.setVisible(axesShown);
 
 		return axesShown;
 	}
@@ -257,7 +288,81 @@ public class DisplayScene
 
 
 	private graphics.scenery.Line[] borderData = null;
-	private boolean borderShown = false;
+	private boolean                borderShown = false;
+
+	public
+	void CreateDisplaySceneBorder()
+	{
+		//remove any old border, if it exists at all...
+		RemoveDisplaySceneBorder();
+
+		borderData = new graphics.scenery.Line[] {
+			new graphics.scenery.Line(6), new graphics.scenery.Line(6),
+			new graphics.scenery.Line(6), new graphics.scenery.Line(6)  };
+
+		final GLVector sxsysz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]             );
+		final GLVector lxsysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]             );
+		final GLVector sxlysz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
+		final GLVector lxlysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
+		final GLVector sxsylz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
+		final GLVector lxsylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
+		final GLVector sxlylz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
+		final GLVector lxlylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
+
+		//first of the two mandatory surrounding fake points that are never displayed
+		for (graphics.scenery.Line l : borderData) l.addPoint(sxsysz);
+
+		//C-shape around the front face (one edge missing)
+		borderData[0].addPoint(lxlysz);
+		borderData[0].addPoint(sxlysz);
+		borderData[0].addPoint(sxsysz);
+		borderData[0].addPoint(lxsysz);
+		borderData[0].setMaterial(materials[1]);
+
+		//the same around the right face
+		borderData[1].addPoint(lxlylz);
+		borderData[1].addPoint(lxlysz);
+		borderData[1].addPoint(lxsysz);
+		borderData[1].addPoint(lxsylz);
+		borderData[1].setMaterial(materials[3]);
+
+		//the same around the rear face
+		borderData[2].addPoint(sxlylz);
+		borderData[2].addPoint(lxlylz);
+		borderData[2].addPoint(lxsylz);
+		borderData[2].addPoint(sxsylz);
+		borderData[2].setMaterial(materials[1]);
+
+		//the same around the left face
+		borderData[3].addPoint(sxlysz);
+		borderData[3].addPoint(sxlylz);
+		borderData[3].addPoint(sxsylz);
+		borderData[3].addPoint(sxsysz);
+		borderData[3].setMaterial(materials[3]);
+
+		for (graphics.scenery.Line l : borderData)
+		{
+			//second of the two mandatory surrounding fake points that are never displayed
+			l.addPoint(sxsysz);
+			l.setEdgeWidth(0.02f);
+			l.setVisible(false);
+			l.setName("border wire frame");
+			scene.addChild(l);
+		}
+
+		borderShown = false;
+	}
+
+	public
+	void RemoveDisplaySceneBorder()
+	{
+		if (borderData == null) return;
+
+		for (graphics.scenery.Line l : borderData) scene.removeChild(l);
+
+		borderData = null;
+		borderShown = false;
+	}
 
 	public
 	boolean ToggleDisplaySceneBorder()
@@ -265,70 +370,16 @@ public class DisplayScene
 		//first run, init the data
 		if (borderData == null)
 		{
-			borderData = new graphics.scenery.Line[] {
-				new graphics.scenery.Line(6), new graphics.scenery.Line(6),
-				new graphics.scenery.Line(6), new graphics.scenery.Line(6)  };
-
-			final GLVector sxsysz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]             );
-			final GLVector lxsysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]             );
-			final GLVector sxlysz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
-			final GLVector lxlysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
-			final GLVector sxsylz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
-			final GLVector lxsylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
-			final GLVector sxlylz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
-			final GLVector lxlylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
-
-			//first of the two mandatory surrounding fake points that are never displayed
-			for (graphics.scenery.Line l : borderData) l.addPoint(sxsysz);
-
-			//C-shape around the front face (one edge missing)
-			borderData[0].addPoint(lxlysz);
-			borderData[0].addPoint(sxlysz);
-			borderData[0].addPoint(sxsysz);
-			borderData[0].addPoint(lxsysz);
-			borderData[0].setMaterial(materials[1]);
-
-			//the same around the right face
-			borderData[1].addPoint(lxlylz);
-			borderData[1].addPoint(lxlysz);
-			borderData[1].addPoint(lxsysz);
-			borderData[1].addPoint(lxsylz);
-			borderData[1].setMaterial(materials[3]);
-
-			//the same around the rear face
-			borderData[2].addPoint(sxlylz);
-			borderData[2].addPoint(lxlylz);
-			borderData[2].addPoint(lxsylz);
-			borderData[2].addPoint(sxsylz);
-			borderData[2].setMaterial(materials[1]);
-
-			//the same around the left face
-			borderData[3].addPoint(sxlysz);
-			borderData[3].addPoint(sxlylz);
-			borderData[3].addPoint(sxsylz);
-			borderData[3].addPoint(sxsysz);
-			borderData[3].setMaterial(materials[3]);
-
-			borderData[0].setName("border wire frame");
-			borderData[1].setName("border wire frame");
-			borderData[2].setName("border wire frame");
-			borderData[3].setName("border wire frame");
-
-			for (graphics.scenery.Line l : borderData)
-			{
-				//second of the two mandatory surrounding fake points that are never displayed
-				l.addPoint(sxsysz);
-				l.setEdgeWidth(0.02f);
-			}
+			System.out.println("Creating scene border before turning it on...");
+			CreateDisplaySceneBorder();
 		}
-
-		//add-or-remove from the scene
-		for (Node n : borderData)
-			if (borderShown) scene.removeChild(n);
-			else             scene.addChild(n);
 
 		//toggle the flag
 		borderShown ^= true;
+
+		//adjust the visibility
+		for (Node n : borderData)
+			n.setVisible(borderShown);
 
 		return borderShown;
 	}
