@@ -195,6 +195,16 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
+	/** attempts to turn on/off the "push mode", and reports the state */
+	public
+	boolean TogglePushMode()
+	{
+		sciView.setPushMode( !sciView.getPushMode() );
+		return sciView.getPushMode();
+	}
+	//----------------------------------------------------------------------------
+
+
 	private Cylinder[] axesData = null;
 	private boolean   axesShown = false;
 
@@ -436,10 +446,20 @@ public class DisplayScene
 		//report the current state
 		return fixedLightsChoosen;
 	}
-
-
 	//----------------------------------------------------------------------------
 
+
+	/** flag for external modules to see if they should call saveNextScreenshot() */
+	public boolean savingScreenshots = false;
+
+	/** helper method to save the current content of the scene into /tmp/frameXXXX.png */
+	public
+	void saveNextScreenshot()
+	{
+		final String filename = String.format("/tmp/frame%04d.png",tickCounter);
+		System.out.println("Saving screenshot: "+filename);
+		sciView.getSceneryRenderer().screenshot(filename,true);
+	}
 
 	/** counts how many times the "tick message" has been received, this message
 	    is assumed to be sent typically after one simulation round is over */
@@ -987,10 +1007,12 @@ public class DisplayScene
 	public
 	void reportSettings()
 	{
-		System.out.println("push mode       : N/A"                                 + "  \tscreenshots            : N/A");
-		System.out.println("garbage collect.: " + garbageCollecting                + "  \ttickCounter            : " + tickCounter);
-		System.out.println("scene border    : " + borderShown                      + "  \torientation compass    : " + axesShown);
-
+		System.out.println("push mode       : " + sciView.getPushMode() + "  \tscreenshots            : " + savingScreenshots);
+		System.out.println("garbage collect.: " + garbageCollecting     + "  \ttickCounter            : " + tickCounter);
+		System.out.println("scene border    : " + borderShown           + "  \torientation compass    : " + axesShown);
+		System.out.println("scene offset    : " + sceneOffset[0]+","+sceneOffset[1]+","+sceneOffset[2]+" microns");
+		System.out.println("scene size      : " + sceneSize[0]  +","+sceneSize[1]  +","+sceneSize[2]  +" microns");
+		System.out.println("scene lights    : " + fixedLightsChoosen);
 		System.out.println("visibility      : 'g' 'G'"                                                               +  "\t'g' mode   (cell debug): " + cellDebugShown);
 		System.out.println("         points :  "+(spheresShown.g_Mode? "Y":"N")+"   "+(spheresShown.G_Mode? "Y":"N") + " \t'G' mode (global debug): " + generalDebugShown);
 		System.out.println("         lines  :  "+(  linesShown.g_Mode? "Y":"N")+"   "+(  linesShown.G_Mode? "Y":"N") + " \tvector elongation      : " + vectorsStretch + "x");

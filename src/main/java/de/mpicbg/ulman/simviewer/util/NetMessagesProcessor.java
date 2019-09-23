@@ -263,7 +263,24 @@ public class NetMessagesProcessor
 	{
 		System.out.println("NetMessagesProcessor: Got tick message: "+msg);
 
+		//check if we should save the screen
+		if (scene.savingScreenshots)
+		{
+			//give scenery some grace time to redraw everything
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				//a bit unexpected to be stopped here, so we leave a note and forward the exception upstream
+				System.out.println("NetMessagesProcessor: Interrupted just before requesting a screen shot:");
+				e.printStackTrace();
+				throw e;
+			}
+
+			scene.saveNextScreenshot();
+		}
+
 		if (scene.garbageCollecting) scene.garbageCollect();
+
 		scene.increaseTickCounter();
 	}
 }

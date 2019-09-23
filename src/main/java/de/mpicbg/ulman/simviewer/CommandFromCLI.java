@@ -112,10 +112,14 @@ public class CommandFromCLI implements Runnable
 			System.out.println("h - Shows this help message");
 			System.out.println("q - Quits the program");
 			System.out.println("o - Overviews the current settings");
+			System.out.println("p - Toggles usage of the rendering push mode");
 			System.out.println();
 
 			System.out.println("A - Toggles display of the axes in the scene centre");
 			System.out.println("B - Toggles display of the scene border");
+			System.out.println("I - Toggles between front/back/both/none ramp lights");
+			System.out.println("s - Saves the current content as a screenshot image");
+			System.out.println("S - Toggles automatic saving of screenshots (always after vectors update)");
 			System.out.println();
 
 			System.out.println("P - Adds some cells to have something to display");
@@ -145,6 +149,9 @@ public class CommandFromCLI implements Runnable
 			break;
 		case 'B':
 			System.out.println("Scene border displayed: "+scene.ToggleDisplaySceneBorder());
+			break;
+		case 'I':
+			System.out.println("Current ramp lights: "+scene.ToggleFixedLights());
 			break;
 
 		case 'P':
@@ -207,6 +214,19 @@ public class CommandFromCLI implements Runnable
 		case 'M':
 			scene.EnableFrontFaceCulling();
 			System.out.println("Front faces NOT displayed");
+			break;
+
+		case 's':
+			scene.saveNextScreenshot();
+			System.out.println("Current content (screenshot) just saved into a file");
+			break;
+		case 'S':
+			scene.savingScreenshots ^= true;
+			System.out.println("Automatic screenshots are now: "+scene.savingScreenshots);
+			break;
+
+		case 'p':
+			System.out.println("Push node is now: "+scene.TogglePushMode());
 			break;
 
 		case 'O':
