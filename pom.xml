@@ -11,7 +11,7 @@
 
 	<groupId>de.mpicbg.ulman</groupId>
 	<artifactId>SimViewer</artifactId>
-	<version>1.0-SNAPSHOT-2</version>
+	<version>1.1-SNAPSHOT</version>
 
 	<organization>
 		<name>MPI-CBG</name>
@@ -19,7 +19,7 @@
 	</organization>
 
 	<name>SimViewer</name>
-	<description>See README.md</description>
+	<description>Fiji and SciView plugins for remote visualizations.</description>
 	<url>https://github.com/xulman/SimViewer</url>
 	<inceptionYear>2017</inceptionYear>
 
@@ -83,6 +83,14 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<package-name>de.mpicbg.ulman.simviewer</package-name>
+		<main-class>de.mpicbg.ulman.simviewer</main-class>
+
+		<!-- the dependencies copied verbatim from the dependency list
+		     of the respective version of the SciView -->
+		<scenery.version>5b86e130</scenery.version>
+		<cleargl.version>2.2.6</cleargl.version>
+		<kotlin.version>1.3.41</kotlin.version>
+		<lwjgl.version>3.2.1</lwjgl.version>
 	</properties>
 
 	<repositories>
@@ -93,41 +101,26 @@
 	</repositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.zeromq</groupId>
-			<artifactId>jeromq</artifactId>
-			<version>0.5.1</version>
-		</dependency>
-
+		<!-- for ImgViewer that implements the img transfer protocol, includes also the dependency
+		     of jeromq for SimViewer to implement the graphics elements transfer protocol -->
 		<dependency>
 			<groupId>de.mpicbg.ulman</groupId>
 			<artifactId>DAIS-wp13</artifactId>
 			<version>1.0.1</version>
 		</dependency>
 
+		<!-- to gain control over the logging from SciView (mainly scenery's logging) -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.9</version>
 		</dependency>
 
+		<!-- the SciView itself, includes also Fiji -->
 		<dependency>
 			<groupId>sc.iview</groupId>
 			<artifactId>sciview</artifactId>
 			<version>0.2.0-beta-2-SNAPSHOT</version>
-
-			<exclusions>
-				<exclusion>
-					<groupId>net.coremem</groupId>
-					<artifactId>CoreMem</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>graphics.scenery</groupId>
-			<artifactId>scenery</artifactId>
-			<version>0.7.0-beta-6-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
