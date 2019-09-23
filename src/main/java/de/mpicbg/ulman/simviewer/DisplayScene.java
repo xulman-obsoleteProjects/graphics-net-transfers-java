@@ -207,6 +207,75 @@ public class DisplayScene
 		sciView.setPushMode( !sciView.getPushMode() );
 		return sciView.getPushMode();
 	}
+
+	/** resets the scene offset and size to its current content plus 10 % relative margin,
+	    and rebuilds and repositions the display axes (orientation compass), scene border and lights */
+	public
+	void ResizeScene()
+	{
+		ResizeScene(0.1f, 0.1f, 0.1f);
+	}
+
+	/** resets the scene offset and size to its current content plus given relative margin,
+	    and rebuilds and repositions the display axes (orientation compass), scene border and lights */
+	public
+	void ResizeScene(final float... relativeMargin)
+	{
+		if (relativeMargin.length != sceneSize.length)
+			throw new RuntimeException("Scene marging is of incompatible dimension.");
+
+		final OrientedBoundingBox box = scene.getBoundingBox();
+
+		sceneOffset[0] = box.getMin().x();
+		sceneOffset[1] = box.getMin().y();
+		sceneOffset[2] = box.getMin().z();
+
+		sceneSize[0] = box.getMax().x();
+		sceneSize[1] = box.getMax().y();
+		sceneSize[2] = box.getMax().z();
+
+		for (int d = 0; d < 3; ++d)
+		{
+			sceneSize[d] -= sceneOffset[d];
+			sceneOffset[d] -= relativeMargin[d] * sceneSize[d];
+			sceneSize[d] *= 2.f * relativeMargin[d];
+		}
+
+		this.ResizeScene(sceneOffset, sceneSize);
+	}
+
+	/** resets the scene offset and size to the one given, and rebuilds and repositions
+	    the display axes (orientation compass), scene border and lights */
+	public
+	void ResizeScene(final float[] sOffset, final float[] sSize)
+	{
+		if (sOffset.length != sceneOffset.length)
+			throw new RuntimeException("New scene offset of incompatible dimension.");
+		if (sSize.length != sceneSize.length)
+			throw new RuntimeException("New scene size of incompatible dimension.");
+
+		//update the internal size information
+		for (int d = 0; d < sceneSize.length; ++d)
+		{
+			sceneOffset[d] = sOffset[d];
+			sceneSize[d]   = sSize[d];
+		}
+
+		fixedLightsState backupLightsState = fixedLightsChoosen;
+		RemoveFixedLightsRamp();
+		CreateFixedLightsRamp();
+		while (ToggleFixedLights() != backupLightsState) ;
+
+		boolean backupState = borderShown;
+		RemoveDisplaySceneBorder();
+		CreateDisplaySceneBorder();
+		if (backupState) ToggleDisplaySceneBorder();
+
+		backupState = axesShown;
+		RemoveDisplayAxes();
+		CreateDisplayAxes();
+		if (backupState) ToggleDisplayAxes();
+	}
 	//----------------------------------------------------------------------------
 
 
