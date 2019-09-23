@@ -92,12 +92,13 @@ public class CommandFromCLI implements Runnable
 			}
 		}
 		catch (IOException e) {
-			System.out.println("Key listener: Error reading the console.");
+			System.out.println("Key listener stopped, error reading the console: "+e.getMessage());
 			e.printStackTrace();
 		}
 		catch (InterruptedException e) {
-			System.out.println("Key listener: Interrupted and Stopped.");
+			System.out.println("Key listener interrupted: "+e.getMessage());
 		}
+		System.out.println("Key listener: Stopped.");
 	}
 
 
@@ -289,9 +290,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'q':
-			scene.stop();
-			//don't wait for GUI to tell me to stop
-			throw new InterruptedException("Key listener: Stopping myself now.");
+			throw new InterruptedException("User requested exit.");
 		default:
 			if (key != '\n') //do not respond to Enter keystrokes
 				System.out.println("Not recognized command, no action taken");

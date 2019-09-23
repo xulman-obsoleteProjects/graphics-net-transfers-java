@@ -29,17 +29,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
-import graphics.scenery.Node;
 import org.scijava.command.Command;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
+
 import sc.iview.SciView;
 import graphics.scenery.Light;
+import graphics.scenery.Node;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 // ------- to satisfy the main() method -------
@@ -67,10 +70,18 @@ public class SimViewer implements Command
 	@Parameter
 	private SciView sciView;
 
+
+	//----------------------------------------------------------------------------
+	// visible params:
+	@Parameter(required = false)
+	private String initSequence = "";
+
+	@Parameter(min="1024")
+	private int receivingPort = 8765;
 	@Override
 	public void run()
 	{
-		log.info("SimViewer started");
+		log.info("SimViewer initializing");
 
 		//setup the original sciView scene
 		sciView.getFloor().setVisible(false);
@@ -81,20 +92,80 @@ public class SimViewer implements Command
 		                                      new float[] {  0.f,  0.f,  0.f},
 		                                      new float[] {480.f,220.f,220.f});
 
-		//setup the lights
+		//setup our own lights
 		scene.CreateFixedLightsRamp();
-		scene.ToggleFixedLights();
-		scene.ToggleFixedLights();
 		scene.ToggleFixedLights();
 
 		//populate the scene initially
-		scene.ToggleDisplayAxes();
-		scene.ToggleDisplaySceneBorder();
-		(new CommandFromCLI(scene)).CreateFakeCells();
+		scene.CreateDisplayAxes();
+		scene.CreateDisplaySceneBorder();
 
-		//close SimViewer and restore the original sciView scene
-		//scene.stop();
-		//enableDisabledLights();
+		//start aux services:
+		//the shared, messages processor and its "wrapping classes"
+		final NetMessagesProcessor netMsgProcessor = new NetMessagesProcessor(scene);
+		//
+		final CommandFromNetwork        cmdNet = new CommandFromNetwork(netMsgProcessor, receivingPort);
+		final CommandFromFlightRecorder cmdFR  = new CommandFromFlightRecorder(netMsgProcessor);
+
+		//the user-commands processor
+		final CommandFromCLI            cmdCLI = new CommandFromCLI(scene, initSequence);
+
+		//notes:
+		//cmdCLI interacts with the 'scene' directly for some of its functionalities, however,
+		//functionality related to the FlightRecording is outsourced to the cmdFR
+		//
+		//cmdFR recieves its messages from a file and it is the user (via 'scene' or cmdCLI) that triggers its activity,
+		//cmdNet recieves its messages from a network and it is this event that triggers its activity
+		//
+		//cmdNet and cmdCLI are therefore "living" in separate threads (coded later)
+		//
+		//the cmdCLI as well as the 'scene' itself can also influence/command the cmdFR (they trigger its activity),
+		//and so we "inject" the reference on it
+		 scene.flightRecorder = cmdFR;
+		cmdCLI.flightRecorder = cmdFR;
+
+		//only now start the additional controls (console and network)
+		CLIcontrol = new Thread( cmdCLI );
+		NETcontrol = new Thread( cmdNet );
+
+		CLIcontrol.start();
+		NETcontrol.start();
+
+		log.info("SimViewer started");
+
+		//and wait until the command line signals the SimView to stop
+		try {
+			CLIcontrol.join();
+		}
+		catch (InterruptedException e) {
+			System.out.println("SimViewer interrupted: "+e.getMessage());
+			e.printStackTrace();
+		}
+
+		this.stop();
+	}
+
+	private DisplayScene scene = null;
+	private Thread CLIcontrol = null;
+	private Thread NETcontrol = null;
+
+	public void stop()
+	{
+		//close SimViewer's aux services
+		if (NETcontrol != null && NETcontrol.isAlive()) NETcontrol.interrupt();
+		NETcontrol = null;
+
+		if (CLIcontrol != null && CLIcontrol.isAlive()) CLIcontrol.interrupt();
+		CLIcontrol = null;
+
+		//close SimViewer
+		if (scene != null)
+		{
+			//removes all lights, and objects registered with the SimViewer
+			scene.stop();
+			scene = null;
+		}
+
 		log.info("SimViewer stopped");
 	}
 

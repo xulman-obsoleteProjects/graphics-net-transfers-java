@@ -107,13 +107,13 @@ public class CommandFromNetwork implements Runnable
 			}
 		}
 		catch (ZMQException e) {
-			System.out.println("Network listener: Crashed with ZeroMQ error: " + e.getMessage());
+			System.out.println("Network listener crashed with ZeroMQ error: " + e.getMessage());
 		}
 		catch (InterruptedException e) {
-			System.out.println("Network listener: Interrupted.");
+			System.out.println("Network listener interrupted: "+e.getMessage());
 		}
 		catch (Exception e) {
-			System.out.println("Network listener: Error: " + e.getMessage());
+			System.out.println("Network listener stopped, error: " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
