@@ -335,11 +335,18 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	private PointLight[][] fixedLights;
+	//the state flags of the lights
+	public enum fixedLightsState { NONE, BOTH, FRONT, REAR };
+
+	private PointLight[][] fixedLights = null;
+	private fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
 
 	public
 	void CreateFixedLightsRamp()
 	{
+		//remove any old lights, if they exist at all...
+		RemoveFixedLightsRamp();
+
 		//two light ramps at fixed positions
 		//----------------------------------
 		//elements of coordinates of positions of lights
@@ -372,19 +379,19 @@ public class DisplayScene
 		(fixedLights[1][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zFar));
 		(fixedLights[1][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zFar));
 
-		fixedLights[0][0].setName("PointLight: x-left, y-bottom, z-near");
-		fixedLights[0][1].setName("PointLight: x-left, y-top, z-near");
-		fixedLights[0][2].setName("PointLight: x-centre, y-bottom, z-near");
-		fixedLights[0][3].setName("PointLight: x-centre, y-top, z-near");
-		fixedLights[0][4].setName("PointLight: x-right, y-bottom, z-near");
-		fixedLights[0][5].setName("PointLight: x-right, y-top, z-near");
+		fixedLights[0][0].setName("PointLight Ramp1: x-left, y-bottom, z-near");
+		fixedLights[0][1].setName("PointLight Ramp1: x-left, y-top, z-near");
+		fixedLights[0][2].setName("PointLight Ramp1: x-centre, y-bottom, z-near");
+		fixedLights[0][3].setName("PointLight Ramp1: x-centre, y-top, z-near");
+		fixedLights[0][4].setName("PointLight Ramp1: x-right, y-bottom, z-near");
+		fixedLights[0][5].setName("PointLight Ramp1: x-right, y-top, z-near");
 
-		fixedLights[1][0].setName("PointLight: x-left, y-bottom, z-far");
-		fixedLights[1][1].setName("PointLight: x-left, y-top, z-far");
-		fixedLights[1][2].setName("PointLight: x-centre, y-bottom, z-far");
-		fixedLights[1][3].setName("PointLight: x-centre, y-top, z-far");
-		fixedLights[1][4].setName("PointLight: x-right, y-bottom, z-far");
-		fixedLights[1][5].setName("PointLight: x-right, y-top, z-far");
+		fixedLights[1][0].setName("PointLight Ramp2: x-left, y-bottom, z-far");
+		fixedLights[1][1].setName("PointLight Ramp2: x-left, y-top, z-far");
+		fixedLights[1][2].setName("PointLight Ramp2: x-centre, y-bottom, z-far");
+		fixedLights[1][3].setName("PointLight Ramp2: x-centre, y-top, z-far");
+		fixedLights[1][4].setName("PointLight Ramp2: x-right, y-bottom, z-far");
+		fixedLights[1][5].setName("PointLight Ramp2: x-right, y-top, z-far");
 
 		//common settings of all lights
 		final GLVector lightsColor = new GLVector(1.0f, 1.0f, 1.0f);
@@ -396,50 +403,53 @@ public class DisplayScene
 				l.setVisible(false);
 				sciView.addNode(l);
 			}
+
+		fixedLightsChoosen = fixedLightsState.NONE;
 	}
 
 	public
 	void RemoveFixedLightsRamp()
 	{
+		if (fixedLights == null) return;
+
 		for (PointLight[] lightRamp : fixedLights)
 			for (PointLight l : lightRamp)
 				sciView.deleteNode(l);
 
 		fixedLights = null;
+		fixedLightsChoosen = fixedLightsState.NONE;
 	}
-
-	//the state flags of the lights
-	public enum fixedLightsState { FRONT, REAR, BOTH, NONE };
-	protected fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
 
 	public
 	fixedLightsState ToggleFixedLights()
 	{
 		if (fixedLights == null)
 		{
-			System.out.println("Creating light ramp before turning it on...");
-			this.CreateFixedLightsRamp();
+			System.out.println("Creating light ramps before turning them on...");
+			CreateFixedLightsRamp();
 		}
 
 		switch (fixedLightsChoosen)
 		{
+		case NONE:
+			for (PointLight l : fixedLights[0]) l.setVisible(true);
+			for (PointLight l : fixedLights[1]) l.setVisible(true);
+			fixedLightsChoosen = fixedLightsState.BOTH;
+			break;
+		case BOTH:
+			for (PointLight l : fixedLights[0]) l.setVisible(true);
+			for (PointLight l : fixedLights[1]) l.setVisible(false);
+			fixedLightsChoosen = fixedLightsState.FRONT;
+			break;
 		case FRONT:
 			for (PointLight l : fixedLights[0]) l.setVisible(false);
 			for (PointLight l : fixedLights[1]) l.setVisible(true);
 			fixedLightsChoosen = fixedLightsState.REAR;
 			break;
 		case REAR:
-			for (PointLight l : fixedLights[0]) l.setVisible(true);
-			fixedLightsChoosen = fixedLightsState.BOTH;
-			break;
-		case BOTH:
 			for (PointLight l : fixedLights[0]) l.setVisible(false);
 			for (PointLight l : fixedLights[1]) l.setVisible(false);
 			fixedLightsChoosen = fixedLightsState.NONE;
-			break;
-		case NONE:
-			for (PointLight l : fixedLights[0]) l.setVisible(true);
-			fixedLightsChoosen = fixedLightsState.FRONT;
 			break;
 		}
 
