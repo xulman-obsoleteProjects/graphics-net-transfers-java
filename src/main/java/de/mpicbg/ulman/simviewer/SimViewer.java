@@ -78,6 +78,35 @@ public class SimViewer implements Command
 
 	@Parameter(min="1024")
 	private int receivingPort = 8765;
+
+
+	@Parameter(stepSize = "10", callback = "checkMinX")
+	private float minX = 0;
+
+	@Parameter(stepSize = "10", callback = "checkMaxX")
+	private float maxX = 500;
+
+	@Parameter(stepSize = "10", callback = "checkMinY")
+	private float minY = 0;
+
+	@Parameter(stepSize = "10", callback = "checkMaxY")
+	private float maxY = 500;
+
+	@Parameter(stepSize = "10", callback = "checkMinZ")
+	private float minZ = 0;
+
+	@Parameter(stepSize = "10", callback = "checkMaxZ")
+	private float maxZ = 500;
+
+	void checkMinX() { if (minX >= maxX) minX = maxX-1; }
+	void checkMaxX() { if (minX >= maxX) maxX = minX+1; }
+	void checkMinY() { if (minY >= maxY) minY = maxY-1; }
+	void checkMaxY() { if (minY >= maxY) maxY = minY+1; }
+	void checkMinZ() { if (minZ >= maxZ) minZ = maxZ-1; }
+	void checkMaxZ() { if (minZ >= maxZ) maxZ = minZ+1; }
+
+
+	//----------------------------------------------------------------------------
 	@Override
 	public void run()
 	{
@@ -86,10 +115,15 @@ public class SimViewer implements Command
 		//prepare the original SciView scene
 		disableFloorAndVisibleLights();
 
+		//get the scene "diagonal"
+		maxX -= minX;
+		maxY -= minY;
+		maxZ -= minZ;
+
 		//setup the SimViewer's playground..
-		DisplayScene scene = new DisplayScene(sciView,
-		                                      new float[] {  0.f,  0.f,  0.f},
-		                                      new float[] {480.f,220.f,220.f});
+		scene = new DisplayScene(sciView,
+		                         new float[] {minX,minY,minZ},
+		                         new float[] {maxX,maxY,maxZ});
 
 		//setup our own lights
 		scene.CreateFixedLightsRamp();
