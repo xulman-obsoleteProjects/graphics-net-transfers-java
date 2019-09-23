@@ -867,6 +867,20 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
+	public
+	void suspendNodesUpdating()
+	{
+		//intentionally empty
+	}
+
+	public
+	void resumeNodesUpdating()
+	{
+		//intentionally empty
+	}
+	//----------------------------------------------------------------------------
+
+
 	/** cell forces are typically small in magnitude compared to the cell size,
 	    this defines the current magnification applied when displaying the force vectors */
 	private float vectorsStretch = 1.f;
