@@ -125,7 +125,7 @@ public class DisplayScene
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		refPointNode.setName("master instance - sphere");
-		sciView.addNode(refPointNode);
+		scene.addChild(refPointNode);
 
 		//define a master instance line
 		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
@@ -134,7 +134,7 @@ public class DisplayScene
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		refLineNode.setName("master instance - line");
-		sciView.addNode(refLineNode);
+		scene.addChild(refLineNode);
 
 		//define a master instance vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
@@ -144,14 +144,14 @@ public class DisplayScene
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		refVectorNode_Shaft.setName("master instance - vector shaft");
-		sciView.addNode(refVectorNode_Shaft);
+		scene.addChild(refVectorNode_Shaft);
 		//
 		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
 		refVectorNode_Head.setMaterial(refMaterials[2]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		refVectorNode_Head.setName("master instance - vector head");
-		sciView.addNode(refVectorNode_Head);
+		scene.addChild(refVectorNode_Head);
 	}
 
 	/** attempts to close this rendering window */
