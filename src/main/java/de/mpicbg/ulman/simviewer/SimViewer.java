@@ -79,6 +79,11 @@ public class SimViewer implements Command
 	@Parameter(min="1024")
 	private int receivingPort = 8765;
 
+	@Parameter(choices = { "No: Works on any HW but huger and slower",
+	                       "Partial: Works on most HW, slimmer, faster but without colors",
+	                       "Full: Works on recent HW, slimmer, faster and with colors" })
+	private String instancing = "No";
+
 
 	@Parameter(stepSize = "10", callback = "checkMinX")
 	private float minX = 0;
@@ -115,15 +120,17 @@ public class SimViewer implements Command
 		//prepare the original SciView scene
 		disableFloorAndVisibleLights();
 
-		//get the scene "diagonal"
-		maxX -= minX;
-		maxY -= minY;
-		maxZ -= minZ;
+		//get the scene offset and "diagonal" (size)
+		final float[] sOffset = new float[] {minX,minY,minZ};
+		final float[] sSize   = new float[] {maxX-minX,maxY-minY,maxZ-minZ};
 
 		//setup the SimViewer's playground..
-		scene = new DisplayScene(sciView,
-		                         new float[] {minX,minY,minZ},
-		                         new float[] {maxX,maxY,maxZ});
+		if (instancing.startsWith("No"))
+			scene = new DisplaySceneNoInstancing(sciView,sOffset,sSize);
+		else if (instancing.startsWith("Part"))
+			scene = new DisplaySceneAllInstancing(sciView,false,sOffset,sSize);
+		else
+			scene = new DisplaySceneAllInstancing(sciView,true,sOffset,sSize);
 
 		//setup our own lights
 		scene.CreateFixedLightsRamp();
