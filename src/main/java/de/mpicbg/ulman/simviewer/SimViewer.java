@@ -73,16 +73,19 @@ public class SimViewer implements Command
 
 	//----------------------------------------------------------------------------
 	// visible params:
-	@Parameter(required = false)
-	private String initSequence = "";
-
-	@Parameter(min="1024")
-	private int receivingPort = 8765;
-
 	@Parameter(choices = { "No: Works on any HW but huger and slower",
 	                       "Partial: Works on most HW, slimmer, faster but without colors",
 	                       "Full: Works on recent HW, slimmer, faster and with colors" })
 	private String instancing = "No";
+
+	@Parameter(min="1024")
+	private int receivingPort = 8765;
+
+	@Parameter(required = false)
+	private String initSequence = "";
+
+	@Parameter(required = false)
+	private boolean addOwnLights = true;
 
 
 	@Parameter(stepSize = "10", callback = "checkMinX")
@@ -133,8 +136,11 @@ public class SimViewer implements Command
 			scene = new DisplaySceneAllInstancing(sciView,true,sOffset,sSize);
 
 		//setup our own lights
-		scene.CreateFixedLightsRamp();
-		scene.ToggleFixedLights();
+		if (addOwnLights)
+		{
+			scene.CreateFixedLightsRamp();
+			scene.ToggleFixedLights();
+		}
 
 		//populate the scene initially
 		scene.CreateDisplayAxes();
