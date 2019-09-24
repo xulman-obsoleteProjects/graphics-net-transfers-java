@@ -189,6 +189,9 @@ public class DisplayScene
 	{
 		return new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
 	}
+
+	final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
+	final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
 	//----------------------------------------------------------------------------
 
 
@@ -215,12 +218,11 @@ public class DisplayScene
 	private Cylinder refLineNode;
 	private Cylinder refVectorNode_Shaft;
 	private Cone     refVectorNode_Head;
-	private final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
-	private final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
-	private final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 
 	/** materials used by the master instances: 0-point,1-line,2-vector */
 	final Material[] refMaterials;
+	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
+	final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
 
@@ -617,7 +619,7 @@ public class DisplayScene
 
 	/** counts how many times the "tick message" has been received, this message
 	    is assumed to be sent typically after one simulation round is over */
-	private int tickCounter = 0;
+	int tickCounter = 0;
 	//
 	public
 	void increaseTickCounter()
@@ -639,11 +641,11 @@ public class DisplayScene
 	public final Object lockOnChangingSceneContent = new Object();
 
 	/** these points are registered with the display, but not necessarily always visible */
-	private final Map<Integer,Point> pointNodes = new HashMap<>();
+	final Map<Integer,Point> pointNodes = new HashMap<>();
 	/** these lines are registered with the display, but not necessarily always visible */
-	private final Map<Integer,Line> lineNodes = new HashMap<>();
+	final Map<Integer,Line> lineNodes = new HashMap<>();
 	/** these vectors are registered with the display, but not necessarily always visible */
-	private final Map<Integer,VectorSH> vectorNodes = new HashMap<>();
+	final Map<Integer,VectorSH> vectorNodes = new HashMap<>();
 
 
 	/** this is designed (yet only) for SINGLE-THREAD application! */
@@ -907,7 +909,7 @@ public class DisplayScene
 
 	/** cell forces are typically small in magnitude compared to the cell size,
 	    this defines the current magnification applied when displaying the force vectors */
-	private float vectorsStretch = 1.f;
+	float vectorsStretch = 1.f;
 
 	float getVectorsStretch()
 	{ return vectorsStretch; }
@@ -938,13 +940,13 @@ public class DisplayScene
 	}
 
 	/** signals if we want to have cells (spheres) displayed (even if cellsData is initially empty) */
-	private elementVisibility spheresShown = new elementVisibility();
+	elementVisibility spheresShown = new elementVisibility();
 
 	/** signals if we want to have cell lines displayed */
-	private elementVisibility linesShown = new elementVisibility();
+	elementVisibility linesShown = new elementVisibility();
 
 	/** signals if we want to have cell forces (vectors) displayed */
-	private elementVisibility vectorsShown = new elementVisibility();
+	elementVisibility vectorsShown = new elementVisibility();
 
 	/** signals if we want to have cell "debugging" elements displayed */
 	private boolean cellDebugShown = false;
@@ -1128,7 +1130,6 @@ public class DisplayScene
 	/** given the current display preference in 'displayFlag',
 	    the visibility of the object 'n' with ID is adjusted,
 	    the decided state is indicated in the return value */
-	private
 	boolean showOrHideMe(final int ID, final Node n, final elementVisibility displayFlag)
 	{
 		boolean vis = false;
@@ -1159,7 +1160,6 @@ public class DisplayScene
 		return vis;
 	}
 
-	private
 	void showOrHideMeForVectorSH(final int ID)
 	{
 		final VectorSH v = vectorNodes.get(ID);
