@@ -106,6 +106,12 @@ public class DisplayScene
 		sciView.deleteNode(scene);
 	}
 
+	public
+	void setSceneName(final String newName)
+	{
+		scene.setName(newName);
+	}
+
 	protected
 	Sphere factoryForPoints()
 	{

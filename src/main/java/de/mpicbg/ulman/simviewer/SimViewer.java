@@ -135,6 +135,8 @@ public class SimViewer implements Command
 		else
 			scene = new DisplaySceneAllInstancing(sciView,true,sOffset,sSize);
 
+		scene.setSceneName(String.format("SimViewer @ port "+receivingPort));
+
 		//setup our own lights
 		if (addOwnLights)
 		{
