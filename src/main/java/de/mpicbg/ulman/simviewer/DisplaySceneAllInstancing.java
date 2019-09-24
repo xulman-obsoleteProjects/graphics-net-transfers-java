@@ -152,7 +152,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		//negative color is an agreed signal to remove the point
 		//also, get rid of a point whose radius is "impossible"
-		if (p.color < 0 || p.radius.x() < 0.0f)
+		if (p.colorRGB.x() < 0 || p.radius.x() < 0.0f)
 		{
 			if (n != null)
 			{
@@ -204,7 +204,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		Line n = lineNodes.get(ID);
 
 		//negative color is an agreed signal to remove the line
-		if (l.color < 0)
+		if (l.colorRGB.x() < 0)
 		{
 			if (n != null)
 			{
@@ -260,7 +260,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
-		if (v.color < 0)
+		if (v.colorRGB.x() < 0)
 		{
 			if (n != null)
 			{

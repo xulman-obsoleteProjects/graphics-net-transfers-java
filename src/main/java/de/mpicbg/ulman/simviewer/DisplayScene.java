@@ -31,7 +31,6 @@ package de.mpicbg.ulman.simviewer;
 
 import cleargl.GLVector;
 import graphics.scenery.*;
-import graphics.scenery.Material.CullingMode;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import sc.iview.SciView;
 import java.util.Map;
@@ -40,6 +39,7 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
+import de.mpicbg.ulman.simviewer.util.Palette;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -77,21 +77,13 @@ public class DisplayScene
 		sciView.addNode(scene);
 
 		//init the colors -- the material lookup table
-		materials = new Material[7];
-		(materials[0] = new Material()).setDiffuse( new GLVector(1.0f, 1.0f, 1.0f) );
-		(materials[1] = new Material()).setDiffuse( new GLVector(1.0f, 0.0f, 0.0f) );
-		(materials[2] = new Material()).setDiffuse( new GLVector(0.0f, 1.0f, 0.0f) );
-		(materials[3] = new Material()).setDiffuse( new GLVector(0.2f, 0.4f, 1.0f) ); //lighter blue
-		(materials[4] = new Material()).setDiffuse( new GLVector(0.0f, 1.0f, 1.0f) );
-		(materials[5] = new Material()).setDiffuse( new GLVector(1.0f, 0.0f, 1.0f) );
-		(materials[6] = new Material()).setDiffuse( new GLVector(1.0f, 1.0f, 0.0f) );
-		//
-		for (Material m : materials)
-		{
-			m.setCullingMode(CullingMode.None);
-			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
-			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
-		}
+		final Material sampleMat = new Material();
+		sampleMat.setCullingMode(Material.CullingMode.None);
+		sampleMat.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
+		sampleMat.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+
+		materials = new Palette(1);
+		materials.setMaterialsAlike(sampleMat);
 	}
 
 	/** attempts to clean up and close this rendering window */
@@ -157,7 +149,7 @@ public class DisplayScene
 	final float DsFactor;
 
 	/** fixed lookup table with colors, in the form of materials... */
-	final Material[] materials;
+	Palette materials;
 
 	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
 	final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
@@ -259,9 +251,9 @@ public class DisplayScene
 
 		//set material - color
 		//NB: RGB colors ~ XYZ axes
-		axesData[0].setMaterial(materials[1]);
-		axesData[1].setMaterial(materials[2]);
-		axesData[2].setMaterial(materials[3]);
+		axesData[0].setMaterial(materials.getMaterial(1));
+		axesData[1].setMaterial(materials.getMaterial(2));
+		axesData[2].setMaterial(materials.getMaterial(3));
 
 		axesData[0].setName("compass axis: X");
 		axesData[1].setName("compass axis: Y");
@@ -350,28 +342,28 @@ public class DisplayScene
 		borderData[0].addPoint(sxlysz);
 		borderData[0].addPoint(sxsysz);
 		borderData[0].addPoint(lxsysz);
-		borderData[0].setMaterial(materials[1]);
+		borderData[0].setMaterial(materials.getMaterial(1));
 
 		//the same around the right face
 		borderData[1].addPoint(lxlylz);
 		borderData[1].addPoint(lxlysz);
 		borderData[1].addPoint(lxsysz);
 		borderData[1].addPoint(lxsylz);
-		borderData[1].setMaterial(materials[3]);
+		borderData[1].setMaterial(materials.getMaterial(3));
 
 		//the same around the rear face
 		borderData[2].addPoint(sxlylz);
 		borderData[2].addPoint(lxlylz);
 		borderData[2].addPoint(lxsylz);
 		borderData[2].addPoint(sxsylz);
-		borderData[2].setMaterial(materials[1]);
+		borderData[2].setMaterial(materials.getMaterial(1));
 
 		//the same around the left face
 		borderData[3].addPoint(sxlysz);
 		borderData[3].addPoint(sxlylz);
 		borderData[3].addPoint(sxsylz);
 		borderData[3].addPoint(sxsysz);
-		borderData[3].setMaterial(materials[3]);
+		borderData[3].setMaterial(materials.getMaterial(3));
 
 		for (graphics.scenery.Line l : borderData)
 		{
@@ -835,15 +827,13 @@ public class DisplayScene
 	public
 	void EnableFrontFaceCulling()
 	{
-		for (Material m : materials)
-			m.setCullingMode(CullingMode.Front);
+		materials.EnableFrontFaceCulling();
 	}
 
 	public
 	void DisableFrontFaceCulling()
 	{
-		for (Material m : materials)
-			m.setCullingMode(CullingMode.None);
+		materials.DisableFrontFaceCulling();
 	}
 	//----------------------------------------------------------------------------
 
@@ -923,7 +913,7 @@ public class DisplayScene
 		System.out.println("visibility      : 'g' 'G'"                                                               +  "\t'g' mode   (cell debug): " + cellDebugShown);
 		System.out.println("         points :  "+(spheresShown.g_Mode? "Y":"N")+"   "+(spheresShown.G_Mode? "Y":"N") + " \t'G' mode (global debug): " + generalDebugShown);
 		System.out.println("         lines  :  "+(  linesShown.g_Mode? "Y":"N")+"   "+(  linesShown.G_Mode? "Y":"N") + " \tvector elongation      : " + vectorsStretch + "x");
-		System.out.println("         vectors:  "+(vectorsShown.g_Mode? "Y":"N")+"   "+(vectorsShown.G_Mode? "Y":"N") + " \tfront faces culling    : " + (materials[0].getCullingMode() == CullingMode.Front));
+		System.out.println("         vectors:  "+(vectorsShown.g_Mode? "Y":"N")+"   "+(vectorsShown.G_Mode? "Y":"N") + " \tfront faces culling    : " + (materials.getMaterial(0).getCullingMode() == Material.CullingMode.Front));
 
 		System.out.println("number of points: " + this.pointNodes.size() + "\t  lines: "+this.lineNodes.size() + "\t  vectors: "+this.vectorNodes.size());
 		System.out.println("color legend    :        white: velocity, 1stInnerMost2Yolk");
