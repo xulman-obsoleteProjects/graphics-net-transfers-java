@@ -43,7 +43,7 @@ public class Line extends Vector
 	public Line(final Node l) { super(l); }   //  with  connection to Scenery
 
 	/** converts a line, given via its end positions, into a vector-like representation */
-	public void reset(final GLVector posA, final GLVector posB, final int color)
+	public void reset(final GLVector posA, final GLVector posB, final GLVector rgbColor)
 	{
 		//essentially supplies the functionality of the Vector::update(),
 		//difference is in the semantics of the input
@@ -53,7 +53,9 @@ public class Line extends Vector
 		vector.set(0, posB.x()-posA.x());
 		vector.set(1, posB.y()-posA.y());
 		vector.set(2, posB.z()-posA.z());
-		this.color = color;
+		colorRGB.set(0, rgbColor.x());
+		colorRGB.set(1, rgbColor.y());
+		colorRGB.set(2, rgbColor.z());
 
 		//also update the vector's auxScale:
 		applyScale(1f);

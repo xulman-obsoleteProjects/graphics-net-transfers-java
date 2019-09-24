@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
+import cleargl.GLVector;
 import graphics.scenery.*;
 import sc.iview.SciView;
 import java.util.Iterator;
@@ -36,6 +37,7 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
+import de.mpicbg.ulman.simviewer.util.Palette;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -51,6 +53,15 @@ public class DisplaySceneNoInstancing extends DisplayScene
 	                         final float[] sOffset, final float[] sSize)
 	{
 		super(sciView, sOffset, sSize);
+
+		//(re)init the colors -- the material lookup table
+		final Material sampleMat = new Material();
+		sampleMat.setCullingMode(Material.CullingMode.None);
+		sampleMat.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
+		sampleMat.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+
+		materials = new Palette();
+		materials.setMaterialsAlike(sampleMat);
 	}
 	//----------------------------------------------------------------------------
 
@@ -66,7 +77,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		//negative color is an agreed signal to remove the point
 		//also, get rid of a point whose radius is "impossible"
-		if (p.color < 0 || p.radius.x() < 0.0f)
+		if (p.colorRGB.x() < 0 || p.radius.x() < 0.0f)
 		{
 			if (n != null)
 			{
@@ -91,7 +102,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		//now update the point with the current data
 		n.update(p);
-		n.node.setMaterial(materials[n.color % materials.length]);
+		n.node.setMaterial(materials.getMaterial(n.colorRGB));
 		n.lastSeenTick = tickCounter;
 
 		this.nodeSetNeedsUpdate(n.node);
@@ -109,7 +120,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		Line n = lineNodes.get(ID);
 
 		//negative color is an agreed signal to remove the line
-		if (l.color < 0)
+		if (l.colorRGB.x() < 0)
 		{
 			if (n != null)
 			{
@@ -134,7 +145,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		//update the line with the current data
 		n.update(l);
-		n.node.setMaterial(materials[n.color % materials.length]);
+		n.node.setMaterial(materials.getMaterial(n.colorRGB));
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
@@ -155,7 +166,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
-		if (v.color < 0)
+		if (v.colorRGB.x() < 0)
 		{
 			if (n != null)
 			{
@@ -187,8 +198,8 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		//update the vector with the current data
 		n.updateAndScale(v,vectorsStretch,vec_headLengthRatio);
-		n.node.setMaterial(materials[n.color % materials.length]);
-		n.nodeHead.setMaterial(materials[n.color % materials.length]);
+		n.node.setMaterial(materials.getMaterial(n.colorRGB));
+		n.nodeHead.setMaterial(materials.getMaterial(n.colorRGB));
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation

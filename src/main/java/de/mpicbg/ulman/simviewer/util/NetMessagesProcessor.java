@@ -32,6 +32,7 @@ package de.mpicbg.ulman.simviewer.util;
 import java.util.Locale;
 import java.util.Scanner;
 
+import cleargl.GLVector;
 import de.mpicbg.ulman.simviewer.DisplayScene;
 import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
@@ -68,11 +69,17 @@ public class NetMessagesProcessor
 	 synchronized (scene.lockOnChangingSceneContent)
 	 {
 		try {
-			if (msg.startsWith("v1 points")) processPoints(msg);
+			if (msg.startsWith("v1 points")) processPoints(msg,true);
 			else
-			if (msg.startsWith("v1 lines")) processLines(msg);
+			if (msg.startsWith("v1 lines")) processLines(msg,true);
 			else
-			if (msg.startsWith("v1 vectors")) processVectors(msg);
+			if (msg.startsWith("v1 vectors")) processVectors(msg,true);
+			else
+			if (msg.startsWith("v2 points")) processPoints(msg);
+			else
+			if (msg.startsWith("v2 lines")) processLines(msg);
+			else
+			if (msg.startsWith("v2 vectors")) processVectors(msg);
 			else
 			if (msg.startsWith("v1 triangles")) processTriangles(msg);
 			else
@@ -93,6 +100,10 @@ public class NetMessagesProcessor
 
 	private
 	void processPoints(final String msg)
+	{ processPoints(msg,false); }
+
+	private
+	void processPoints(final String msg, boolean oldV1colors)
 	{
 		Scanner s = new Scanner(msg).useLocale(Locale.ENGLISH);
 
@@ -135,7 +146,8 @@ public class NetMessagesProcessor
 			p.radius.set(0, s.nextFloat());
 			p.radius.set(1, p.radius.x());
 			p.radius.set(2, p.radius.x());
-			p.color  = s.nextInt();
+			if (oldV1colors) readV1Color(s,p.colorRGB);
+			else             readV2Color(s,p.colorRGB);
 
 			scene.addUpdateOrRemovePoint(ID,p);
 		}
@@ -148,6 +160,10 @@ public class NetMessagesProcessor
 
 	private
 	void processLines(final String msg)
+	{ processLines(msg,false); }
+
+	private
+	void processLines(final String msg, boolean oldV1colors)
 	{
 		Scanner s = new Scanner(msg).useLocale(Locale.ENGLISH);
 
@@ -192,7 +208,8 @@ public class NetMessagesProcessor
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
-			l.color = s.nextInt();
+			if (oldV1colors) readV1Color(s,l.colorRGB);
+			else             readV2Color(s,l.colorRGB);
 
 			scene.addUpdateOrRemoveLine(ID,l);
 		}
@@ -205,6 +222,10 @@ public class NetMessagesProcessor
 
 	private
 	void processVectors(final String msg)
+	{ processVectors(msg,false); }
+
+	private
+	void processVectors(final String msg, boolean oldV1colors)
 	{
 		Scanner s = new Scanner(msg).useLocale(Locale.ENGLISH);
 
@@ -249,7 +270,8 @@ public class NetMessagesProcessor
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
-			v.color = s.nextInt();
+			if (oldV1colors) readV1Color(s,v.colorRGB);
+			else             readV2Color(s,v.colorRGB);
 
 			scene.addUpdateOrRemoveVector(ID,v);
 		}
@@ -294,5 +316,57 @@ public class NetMessagesProcessor
 		if (scene.garbageCollecting) scene.garbageCollect();
 
 		scene.increaseTickCounter();
+	}
+
+
+	private
+	void readV1Color(final Scanner s, final GLVector color)
+	{
+		final int colorIndex = s.nextInt();
+		switch (colorIndex)
+		{
+		case 1:
+			color.set(0, 1.0f);
+			color.set(1, 0.0f);
+			color.set(2, 0.0f);
+			break;
+		case 2:
+			color.set(0, 0.0f);
+			color.set(1, 1.0f);
+			color.set(2, 0.0f);
+			break;
+		case 3:
+			color.set(0, 0.2f);
+			color.set(1, 0.4f);
+			color.set(2, 1.0f);
+			break;
+		case 4:
+			color.set(0, 0.0f);
+			color.set(1, 1.0f);
+			color.set(2, 1.0f);
+			break;
+		case 5:
+			color.set(0, 1.0f);
+			color.set(1, 0.0f);
+			color.set(2, 1.0f);
+			break;
+		case 6:
+			color.set(0, 1.0f);
+			color.set(1, 1.0f);
+			color.set(2, 0.0f);
+			break;
+		default:
+			color.set(0, 1.0f);
+			color.set(1, 1.0f);
+			color.set(2, 1.0f);
+		}
+	}
+
+	private
+	void readV2Color(final Scanner s, final GLVector color)
+	{
+		color.set(0, s.nextFloat());
+		color.set(1, s.nextFloat());
+		color.set(2, s.nextFloat());
 	}
 }

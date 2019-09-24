@@ -45,9 +45,6 @@ public class Point
 	public final GLVector centre = new GLVector(0.f,3);
 	public final GLVector radius = new GLVector(0.f,3);
 
-	/** object's color as an index in a color palette */
-	public int color;
-
 	/** object's color in the RGB format */
 	public final GLVector colorRGB = new GLVector(1.0f,0.2f,0.2f,1.0f);
 	public GLVector getColorRGB() { return colorRGB; }
@@ -63,7 +60,6 @@ public class Point
 		radius.set(1, p.radius.y());
 		radius.set(2, p.radius.z());
 
-		color = p.color;
 		colorRGB.set(0, p.colorRGB.x());
 		colorRGB.set(1, p.colorRGB.y());
 		colorRGB.set(2, p.colorRGB.z());

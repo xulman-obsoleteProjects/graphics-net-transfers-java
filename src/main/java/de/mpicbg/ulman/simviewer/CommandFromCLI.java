@@ -325,7 +325,7 @@ public class CommandFromCLI implements Runnable
 				c.radius.set(0, 3.0f);
 				c.radius.set(1, 3.0f);
 				c.radius.set(2, 3.0f);
-				c.color = 2;
+				c.colorRGB.set(1,0.2f);
 				scene.addUpdateOrRemovePoint(ID,c);
 
 				ID++;                   //2nd element of this cell
@@ -335,7 +335,7 @@ public class CommandFromCLI implements Runnable
 				c.radius.set(0, 3.0f);
 				c.radius.set(1, 3.0f);
 				c.radius.set(2, 3.0f);
-				c.color = 3;
+				c.colorRGB.set(1,0.9f);
 				scene.addUpdateOrRemovePoint(ID,c);
 			}
 		}
