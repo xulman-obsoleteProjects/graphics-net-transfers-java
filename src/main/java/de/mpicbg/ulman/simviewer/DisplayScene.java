@@ -120,7 +120,7 @@ public class DisplayScene
 		//instancing:
 		//define a master instance point (Sphere)
 		refMaterials[0].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
-		refPointNode = new Sphere(1.0f, 12);
+		refPointNode = factoryForPoints();
 		refPointNode.setMaterial(refMaterials[0]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
@@ -129,7 +129,7 @@ public class DisplayScene
 
 		//define a master instance line
 		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
-		refLineNode = new Cylinder(0.3f, 1.0f, 4);
+		refLineNode = factoryForLines();
 		refLineNode.setMaterial(refMaterials[1]);
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
@@ -139,14 +139,14 @@ public class DisplayScene
 		//define a master instance vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
 		refMaterials[2].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
-		refVectorNode_Shaft = new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
+		refVectorNode_Shaft = factoryForVectorShafts();
 		refVectorNode_Shaft.setMaterial(refMaterials[2]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
 		refVectorNode_Shaft.setName("master instance - vector shaft");
 		scene.addChild(refVectorNode_Shaft);
 		//
-		refVectorNode_Head = new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
+		refVectorNode_Head = factoryForVectorHeads();
 		refVectorNode_Head.setMaterial(refMaterials[2]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
@@ -164,6 +164,30 @@ public class DisplayScene
 
 		//remove the rest of the SimViewer, which is now only the remaining user's data...
 		sciView.deleteNode(scene);
+	}
+
+	protected
+	Sphere factoryForPoints()
+	{
+		return new Sphere(1.0f, 12);
+	}
+
+	protected
+	Cylinder factoryForLines()
+	{
+		return new Cylinder(0.3f, 1.0f, 4);
+	}
+
+	protected
+	Cylinder factoryForVectorShafts()
+	{
+		return new Cylinder(0.3f, 1.0f-vec_headLengthRatio, 4);
+	}
+
+	protected
+	Cone factoryForVectorHeads()
+	{
+		return new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
 	}
 	//----------------------------------------------------------------------------
 
