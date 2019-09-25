@@ -120,6 +120,7 @@ public class CommandFromCLI implements Runnable
 			System.out.println("B - Toggles display of the scene border");
 			System.out.println("R - Resizes the scene around its current content");
 			System.out.println("I - Toggles between front/back/both/none ramp lights");
+			System.out.println("1,2 - Dims/Brightens the ramp lights");
 			System.out.println("s - Saves the current content as a screenshot image");
 			System.out.println("S - Toggles automatic saving of screenshots (always after vectors update)");
 			System.out.println();
@@ -158,6 +159,12 @@ public class CommandFromCLI implements Runnable
 			break;
 		case 'I':
 			System.out.println("Current ramp lights: "+scene.ToggleFixedLights());
+			break;
+		case '1':
+			System.out.println("Current ramp lights intensity: "+scene.DecreaseFixedLightsIntensity());
+			break;
+		case '2':
+			System.out.println("Current ramp lights intensity: "+scene.IncreaseFixedLightsIntensity());
 			break;
 
 		case 'P':

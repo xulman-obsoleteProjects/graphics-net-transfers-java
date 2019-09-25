@@ -497,6 +497,8 @@ public class DisplayScene
 
 		final float zNear = (sceneOffset[2] + 1.3f*sceneSize[2]) *DsFactor;
 		final float zFar  = (sceneOffset[2] - 0.3f*sceneSize[2]) *DsFactor;
+		final float zNearCentre = (sceneOffset[2] + 1.5f*sceneSize[2]) *DsFactor;
+		final float zFarCentre  = (sceneOffset[2] - 0.5f*sceneSize[2]) *DsFactor;
 
 		//tuned such that, given current light intensity and fading, the rear cells are dark yet visible
 		final float radius = 1.1f*sceneSize[1] *DsFactor;
@@ -505,15 +507,15 @@ public class DisplayScene
 		fixedLights = new PointLight[2][6];
 		(fixedLights[0][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zNear));
 		(fixedLights[0][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zNear));
-		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNear));
-		(fixedLights[0][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zNear));
+		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNearCentre));
+		(fixedLights[0][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zNearCentre));
 		(fixedLights[0][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zNear));
 		(fixedLights[0][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zNear));
 
 		(fixedLights[1][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zFar));
 		(fixedLights[1][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zFar));
-		(fixedLights[1][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zFar));
-		(fixedLights[1][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zFar));
+		(fixedLights[1][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zFarCentre));
+		(fixedLights[1][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zFarCentre));
 		(fixedLights[1][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zFar));
 		(fixedLights[1][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zFar));
 
@@ -536,13 +538,20 @@ public class DisplayScene
 		for (PointLight[] lightRamp : fixedLights)
 			for (PointLight l : lightRamp)
 			{
-				l.setIntensity((200.0f*DsFactor)*(200.0f*DsFactor));
+				l.setIntensity(50.0f*DsFactor);
 				l.setEmissionColor(lightsColor);
 				l.setVisible(false);
 				sciView.addNode(l);
 			}
 
 		fixedLightsChoosen = fixedLightsState.NONE;
+
+		/** ENABLE THIS TO HAVE A SMALL SPHERES PLACED WHERE THE LIGHTS ARE */
+		/*
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+				l.addChild( new Sphere(1.0f, 12) );
+		*/
 	}
 
 	public
@@ -593,6 +602,34 @@ public class DisplayScene
 
 		//report the current state
 		return fixedLightsChoosen;
+	}
+
+	public
+	float IncreaseFixedLightsIntensity()
+	{
+		if (fixedLights == null) return 0.f;
+
+		final float curInt = fixedLights[0][0].getIntensity() + 0.2f;
+
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+				l.setIntensity(curInt);
+
+		return curInt;
+	}
+
+	public
+	float DecreaseFixedLightsIntensity()
+	{
+		if (fixedLights == null) return 0.f;
+
+		final float curInt = Math.max(fixedLights[0][0].getIntensity() - 0.2f, 0.1f);
+
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+				l.setIntensity(curInt);
+
+		return curInt;
 	}
 	//----------------------------------------------------------------------------
 
