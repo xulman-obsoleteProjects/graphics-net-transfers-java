@@ -355,8 +355,8 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	private graphics.scenery.Line[] borderData = null;
-	private boolean                borderShown = false;
+	private Node[]   borderData = null;
+	private boolean borderShown = false;
 
 	public
 	void CreateDisplaySceneBorder()
@@ -364,59 +364,62 @@ public class DisplayScene
 		//remove any old border, if it exists at all...
 		RemoveDisplaySceneBorder();
 
-		borderData = new graphics.scenery.Line[] {
-			new graphics.scenery.Line(6), new graphics.scenery.Line(6),
-			new graphics.scenery.Line(6), new graphics.scenery.Line(6)  };
+		final float barRadius = 0.7f;
 
-		final GLVector sxsysz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]             );
-		final GLVector lxsysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]             );
-		final GLVector sxlysz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
-		final GLVector lxlysz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]             );
-		final GLVector sxsylz = new GLVector(sceneOffset[0]             , sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
-		final GLVector lxsylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]             , sceneOffset[2]+sceneSize[2]);
-		final GLVector sxlylz = new GLVector(sceneOffset[0]             , sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
-		final GLVector lxlylz = new GLVector(sceneOffset[0]+sceneSize[0], sceneOffset[1]+sceneSize[1], sceneOffset[2]+sceneSize[2]);
+		//1 fake node for the SciView + 12 edges of a cube
+		borderData = new Node[13];
+		borderData[0] = new Node("Scene frame");
+		borderData[0].setVisible(false);
+		scene.addChild(borderData[0]);
 
-		//first of the two mandatory surrounding fake points that are never displayed
-		for (graphics.scenery.Line l : borderData) l.addPoint(sxsysz);
-
-		//C-shape around the front face (one edge missing)
-		borderData[0].addPoint(lxlysz);
-		borderData[0].addPoint(sxlysz);
-		borderData[0].addPoint(sxsysz);
-		borderData[0].addPoint(lxsysz);
-		borderData[0].setMaterial(materials.getMaterial(1));
-
-		//the same around the right face
-		borderData[1].addPoint(lxlylz);
-		borderData[1].addPoint(lxlysz);
-		borderData[1].addPoint(lxsysz);
-		borderData[1].addPoint(lxsylz);
-		borderData[1].setMaterial(materials.getMaterial(3));
-
-		//the same around the rear face
-		borderData[2].addPoint(sxlylz);
-		borderData[2].addPoint(lxlylz);
-		borderData[2].addPoint(lxsylz);
-		borderData[2].addPoint(sxsylz);
-		borderData[2].setMaterial(materials.getMaterial(1));
-
-		//the same around the left face
-		borderData[3].addPoint(sxlysz);
-		borderData[3].addPoint(sxlylz);
-		borderData[3].addPoint(sxsylz);
-		borderData[3].addPoint(sxsysz);
-		borderData[3].setMaterial(materials.getMaterial(3));
-
-		for (graphics.scenery.Line l : borderData)
+		//x-axes aligned
+		for (int i=1; i < 5; ++i)
 		{
-			//second of the two mandatory surrounding fake points that are never displayed
-			l.addPoint(sxsysz);
-			l.setEdgeWidth(0.02f);
-			l.setVisible(false);
-			l.setName("border wire frame");
-			scene.addChild(l);
+			borderData[i] = new Cylinder(barRadius,sceneSize[0],4);
+			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+			borderData[i].setMaterial(materials.getMaterial(3));
+			borderData[i].setName("left-right bar (x axis)");
+			borderData[0].addChild( borderData[i] );
 		}
+
+		final GLVector offset = new GLVector(sceneOffset[0],sceneOffset[1],sceneOffset[2]);
+		final GLVector dx = new GLVector(sceneSize[0],0.f,0.f);
+		final GLVector dy = new GLVector(0.f,sceneSize[1],0.f);
+		final GLVector dz = new GLVector(0.f,0.f,sceneSize[2]);
+
+		borderData[1].setPosition(offset);
+		borderData[2].setPosition(offset.plus(dy));
+		borderData[4].setPosition(offset.plus(dy).plus(dz));
+		borderData[3].setPosition(offset.plus(dz));
+
+		//y-axes aligned
+		for (int i=5; i < 9; ++i)
+		{
+			borderData[i] = new Cylinder(barRadius,sceneSize[1],4);
+			borderData[i].setMaterial(materials.getMaterial(1));
+			borderData[i].setName("bottom-up bar (y axis)");
+			borderData[0].addChild( borderData[i] );
+		}
+
+		borderData[5].setPosition(offset);
+		borderData[6].setPosition(offset.plus(dx));
+		borderData[7].setPosition(offset.plus(dx).plus(dz));
+		borderData[8].setPosition(offset.plus(dz));
+
+		//z-axes aligned
+		for (int i=9; i < 13; ++i)
+		{
+			borderData[i] = new Cylinder(barRadius,sceneSize[2],4);
+			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
+			borderData[i].setMaterial(materials.getMaterial(1));
+			borderData[i].setName("front-rear bar (z axis)");
+			borderData[0].addChild( borderData[i] );
+		}
+
+		borderData[9].setPosition(offset);
+		borderData[10].setPosition(offset.plus(dx));
+		borderData[11].setPosition(offset.plus(dx).plus(dy));
+		borderData[12].setPosition(offset.plus(dy));
 
 		borderShown = false;
 	}
@@ -426,7 +429,8 @@ public class DisplayScene
 	{
 		if (borderData == null) return;
 
-		for (graphics.scenery.Line l : borderData) scene.removeChild(l);
+		for (int i=1; i < borderData.length; ++i) borderData[0].removeChild(borderData[i]);
+		scene.removeChild(borderData[0]);
 
 		borderData = null;
 		borderShown = false;
