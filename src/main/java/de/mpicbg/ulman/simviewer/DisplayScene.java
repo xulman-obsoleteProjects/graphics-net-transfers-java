@@ -76,6 +76,10 @@ public class DisplayScene
 		scene.setName("SimViewer");
 		sciView.addNode(scene);
 
+		scene.setBoundingBox(new OrientedBoundingBox(scene,
+			sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
+			sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
+
 		//init the colors -- the material lookup table
 		final Material sampleMat = new Material();
 		sampleMat.setCullingMode(Material.CullingMode.None);
@@ -260,6 +264,10 @@ public class DisplayScene
 			sceneSize[d]   = sSize[d];
 		}
 
+		scene.setBoundingBox(new OrientedBoundingBox(scene,
+			sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
+			sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
+
 		fixedLightsState backupLightsState = fixedLightsChoosen;
 		RemoveFixedLightsRamp();
 		CreateFixedLightsRamp();
@@ -278,8 +286,8 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	private Cylinder[] axesData = null;
-	private boolean   axesShown = false;
+	private Node[]   axesData = null;
+	private boolean axesShown = false;
 
 	public
 	void CreateDisplayAxes()
@@ -287,24 +295,31 @@ public class DisplayScene
 		//remove any old axes, if they exist at all...
 		RemoveDisplayAxes();
 
-		axesData = new Cylinder[] {
-			new Cylinder(1.0f,30.f,4),
-			new Cylinder(1.0f,30.f,4),
-			new Cylinder(1.0f,30.f,4)};
+		final float barRadius = 1.0f;
+		final float barLength = 30.0f;
+
+		axesData = new Node[] {
+			new Node("Scene orientation compass"),
+			new Cylinder(barRadius,barLength,4),
+			new Cylinder(barRadius,barLength,4),
+			new Cylinder(barRadius,barLength,4)};
+
+		axesData[0].setVisible(false);
+		scene.addChild(axesData[0]);
 
 		//set material - color
 		//NB: RGB colors ~ XYZ axes
-		axesData[0].setMaterial(materials.getMaterial(1));
-		axesData[1].setMaterial(materials.getMaterial(2));
-		axesData[2].setMaterial(materials.getMaterial(3));
+		axesData[1].setMaterial(materials.getMaterial(1));
+		axesData[2].setMaterial(materials.getMaterial(2));
+		axesData[3].setMaterial(materials.getMaterial(3));
 
-		axesData[0].setName("compass axis: X");
-		axesData[1].setName("compass axis: Y");
-		axesData[2].setName("compass axis: Z");
+		axesData[1].setName("compass axis: X");
+		axesData[2].setName("compass axis: Y");
+		axesData[3].setName("compass axis: Z");
 
 		//set orientation for x,z axes
-		ReOrientNode(axesData[0],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-		ReOrientNode(axesData[2],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
+		ReOrientNode(axesData[1],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+		ReOrientNode(axesData[3],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
 
 		//place all axes into the scene centre
 		final GLVector centre = new GLVector(
@@ -312,11 +327,10 @@ public class DisplayScene
 			(sceneOffset[1] + 0.5f*sceneSize[1]),
 			(sceneOffset[2] + 0.5f*sceneSize[2]));
 
-		for (Cylinder a : axesData)
+		for (int i=1; i < 4; ++i)
 		{
-			a.setPosition(centre);
-			a.setVisible(false);
-			scene.addChild(a);
+			axesData[i].setPosition(centre);
+			axesData[0].addChild(axesData[i]);
 		}
 
 		axesShown = false;
@@ -327,7 +341,8 @@ public class DisplayScene
 	{
 		if (axesData == null) return;
 
-		for (Cylinder a : axesData) scene.removeChild(a);
+		for (int i=1; i < axesData.length; ++i) axesData[0].removeChild(axesData[i]);
+		scene.removeChild(axesData[0]);
 
 		axesData = null;
 		axesShown = false;
