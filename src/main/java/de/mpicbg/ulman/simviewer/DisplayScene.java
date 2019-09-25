@@ -180,24 +180,67 @@ public class DisplayScene
 		if (relativeMargin.length != sceneSize.length)
 			throw new RuntimeException("Scene marging is of incompatible dimension.");
 
-		final OrientedBoundingBox box = scene.getBoundingBox();
+		//none of the get...BoundingBox() was working for me, so we do it ourselves
+		//final OrientedBoundingBox box = scene.getMaximumBoundingBox();
+		//
+		//scan over all registered elements (Points, Lines, Vectors...) and determine the AABB
+		final GLVector min = new GLVector(+99999999999.f,3);
+		final GLVector max = new GLVector(-99999999999.f,3);
+		for (Point p : pointNodes.values())
+		{
+			//NB: radius should be non-negative
+			updateMin(min, p.centre.minus(p.radius));
+			updateMax(max, p.centre.plus(p.radius));
+		}
+		for (Line l : lineNodes.values())
+		{
+			updateMin(min, l.base);
+			updateMin(min, l.base.plus(l.vector));
+			updateMax(max, l.base);
+			updateMax(max, l.base.plus(l.vector));
+		}
+		for (VectorSH v : vectorNodes.values())
+		{
+			updateMin(min, v.base);
+			updateMin(min, v.base.plus(v.vector));
+			updateMax(max, v.base);
+			updateMax(max, v.base.plus(v.vector));
+		}
 
-		sceneOffset[0] = box.getMin().x();
-		sceneOffset[1] = box.getMin().y();
-		sceneOffset[2] = box.getMin().z();
+		sceneOffset[0] = min.x();
+		sceneOffset[1] = min.y();
+		sceneOffset[2] = min.z();
 
-		sceneSize[0] = box.getMax().x();
-		sceneSize[1] = box.getMax().y();
-		sceneSize[2] = box.getMax().z();
+		sceneSize[0] = max.x();
+		sceneSize[1] = max.y();
+		sceneSize[2] = max.z();
+
+		System.out.println("detected span: "
+		       +sceneOffset[0]+"-"+sceneSize[0]+"  x  "
+		       +sceneOffset[1]+"-"+sceneSize[1]+"  x  "
+		       +sceneOffset[2]+"-"+sceneSize[2]);
 
 		for (int d = 0; d < 3; ++d)
 		{
 			sceneSize[d] -= sceneOffset[d];
 			sceneOffset[d] -= relativeMargin[d] * sceneSize[d];
-			sceneSize[d] *= 2.f * relativeMargin[d];
+			sceneSize[d] *= 1.f + (2.f * relativeMargin[d]);
 		}
 
 		this.ResizeScene(sceneOffset, sceneSize);
+	}
+
+	private void updateMin(final GLVector min, final GLVector pos)
+	{
+		min.set(0, Math.min(min.x(),pos.x()) );
+		min.set(1, Math.min(min.y(),pos.y()) );
+		min.set(2, Math.min(min.z(),pos.z()) );
+	}
+	private void updateMax(final GLVector max, final GLVector pos)
+	{
+		max.set(0, Math.max(max.x(),pos.x()) );
+		max.set(1, Math.max(max.y(),pos.y()) );
+		max.set(2, Math.max(max.z(),pos.z()) );
 	}
 
 	/** resets the scene offset and size to the one given, and rebuilds and repositions
