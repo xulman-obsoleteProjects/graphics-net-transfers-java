@@ -63,12 +63,12 @@ public class DisplayScene
 		this.sciView = sciView;
 
 		//the overall down scaling of the displayed objects such that moving around
-		//the scene with Scenery is vivid (move step size is fixed in Scenery), at
+		//the scene with SciView is vivid (move step size is fixed in SciView), at
 		//the same time we want the objects and distances to be defined with our
 		//non-scaled coordinates -- so we hook everything underneath the fake object
 		//that is downscaled (and consequently all is downscaled too) but defined with
 		//at original scale (with original coordinates and distances)
-		DsFactor = sciView.getSceneryRenderer().toString().contains("vulkan")? 0.04f : 0.1f;
+		DsFactor = 0.2f;
 
 		//introduce an invisible "fake" object
 		scene = new Box(new GLVector(0.0f,3));
