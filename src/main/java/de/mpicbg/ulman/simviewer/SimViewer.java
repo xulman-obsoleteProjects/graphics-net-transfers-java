@@ -236,9 +236,8 @@ public class SimViewer implements Command
 
 		for (Node n : sciView.getAllSceneNodes())
 		{
-			//debug:
-			//log.info("considering "+n.getName()+" of class "+n.getClass().getSimpleName());
-			if (n instanceof Light && n.getVisible())
+			//disable lights, that are enabled and that are not ours
+			if (n instanceof Light && n.getVisible() && !n.getName().startsWith("PointLight Ramp"))
 			{
 				n.setVisible(false);
 				disabledLights.add(n);
