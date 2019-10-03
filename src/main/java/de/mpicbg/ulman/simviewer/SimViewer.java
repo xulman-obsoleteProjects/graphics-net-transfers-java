@@ -135,7 +135,7 @@ public class SimViewer implements Command
 		else
 			scene = new DisplaySceneAllInstancing(sciView,true,sOffset,sSize);
 
-		scene.setSceneName(String.format("SimViewer @ port "+receivingPort));
+		scene.setSceneName("SimViewer @ port "+receivingPort);
 
 		//setup our own lights
 		if (addOwnLights)
@@ -179,9 +179,14 @@ public class SimViewer implements Command
 		CLIcontrol.start();
 		NETcontrol.start();
 
+		GUIcontrol = new CommandFromGUI(scene,
+			"Controls of SimViewer @ port "+receivingPort,
+			(action) -> { CLIcontrol.interrupt(); });
+		GUIcontrol.flightRecorder = cmdFR;
+
 		log.info("SimViewer started");
 
-		//and wait until the command line signals the SimView to stop
+		//and wait until the command line signals the SimViewer to stop
 		try {
 			CLIcontrol.join();
 		}
@@ -194,6 +199,7 @@ public class SimViewer implements Command
 	}
 
 	private DisplayScene scene = null;
+	private CommandFromGUI GUIcontrol = null;
 	private Thread CLIcontrol = null;
 	private Thread NETcontrol = null;
 
@@ -209,6 +215,9 @@ public class SimViewer implements Command
 
 		if (CLIcontrol != null && CLIcontrol.isAlive()) CLIcontrol.interrupt();
 		CLIcontrol = null;
+
+		if (GUIcontrol != null) GUIcontrol.closePanel();
+		GUIcontrol = null;
 
 		//close SimViewer
 		if (scene != null)
