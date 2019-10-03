@@ -151,7 +151,7 @@ public class DisplayScene
 	final float[] sceneSize;
 
 	/** the common scaling factor applied on all spatial units before their submitted to the scene */
-	final float DsFactor;
+	float DsFactor;
 
 	/** fixed lookup table with colors, in the form of materials... */
 	Palette materials;
@@ -171,6 +171,17 @@ public class DisplayScene
 	{
 		sciView.setPushMode( !sciView.getPushMode() );
 		return sciView.getPushMode();
+	}
+
+	/** resets the this.DsFactor scaling of the whole scene, without changing any coordinate
+	    of any displayed (even when set to not visible) object, only the this.scene scaling
+	    is affected; also lights are affected because they are treated separately in SimViewer */
+	public
+	void RescaleScene(final float newDsFactor)
+	{
+		RepositionFixedLightsRamp(newDsFactor);
+		scene.setScale(new GLVector(newDsFactor,3));
+		DsFactor = newDsFactor;
 	}
 
 	/** resets the scene offset and size to its current content plus 10 % relative margin,
@@ -565,6 +576,26 @@ public class DisplayScene
 			for (PointLight l : lightRamp)
 				l.addChild( new Sphere(1.0f, 12) );
 		*/
+	}
+
+	public
+	void RepositionFixedLightsRamp(final float newDsFactor)
+	{
+		if (fixedLights == null) return;
+
+		final float correction = newDsFactor / DsFactor;
+
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+			{
+				final GLVector pos = l.getPosition();
+				for (int i = 0; i < 3; ++i)
+                    pos.set(i, pos.get(i)*correction);
+				l.setPosition( pos );
+
+				l.setLightRadius( l.getLightRadius()*correction );
+				l.setIntensity( l.getIntensity()*correction );
+			}
 	}
 
 	public
