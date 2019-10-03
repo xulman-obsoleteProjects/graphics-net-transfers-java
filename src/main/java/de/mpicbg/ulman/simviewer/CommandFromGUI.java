@@ -178,10 +178,19 @@ public class CommandFromGUI
 		SVcontrol.add(btnLightRamps);
 
 		//'m'/'M'
-		btn = new Button("Enable front face culling");
-		btn.setEnabled(false);
-		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
-		SVcontrol.add(btn);
+		btnFacesCulling.addActionListener( (action) -> {
+				if ( scene.IsFrontFacesCullingEnabled() )
+				{
+					scene.DisableFrontFaceCulling();
+					btnFacesCulling.setLabel( btnFacesCullingLabel_Enable );
+				}
+				else
+				{
+					scene.EnableFrontFaceCulling();
+					btnFacesCulling.setLabel( btnFacesCullingLabel_Disable );
+				}
+			} );
+		SVcontrol.add(btnFacesCulling);
 
 		//'1'
 		btnLightRampsDimmer.addActionListener( (action) -> { scene.DecreaseFixedLightsIntensity(); } );
@@ -234,6 +243,10 @@ public class CommandFromGUI
 		btnLightRampsDimmer.setEnabled(lightStatus);
 		btnLightRampsBrighter.setEnabled(lightStatus);
 	}
+
+	final String btnFacesCullingLabel_Disable = "Make objects solid again";
+	final String btnFacesCullingLabel_Enable =  "Allow to see into objects";
+	final Button btnFacesCulling = new Button( btnFacesCullingLabel_Enable );
 	//----------------------------------------------------------------------------
 
 	/** updates the panel switches to reflect the current state of the SimViewer */
