@@ -30,7 +30,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.simviewer;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.io.PrintStream;
 
@@ -54,7 +56,7 @@ public class CommandFromGUI
 		{
 			frame = new JFrame(showOwnControlPanelWithThisTitle);
 			frame.add( createPanel(onClose) );
-			frame.setMinimumSize( new Dimension(700, 500) );
+			frame.setMinimumSize( new Dimension(600, 500) );
 			refreshPanelState();
 			showPanel();
 		}
@@ -102,19 +104,38 @@ public class CommandFromGUI
 	    user has to provide a listener that will be notified when "close" button is pressed */
 	JPanel createPanel(final ActionListener onClose)
 	{
+		//the root JPanel that will be returned
 		final JPanel mainPanel = new JPanel();
 
+		//mainPanel = SVcontrol, optional EGcontrol, logger inside a LogPane
 		final JPanel SVcontrol = new JPanel(); //SimViewer
 		final JPanel EGcontrol = new JPanel(); //EmbryoGen
-		logger = new ControlPanelLogger();
-
-		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-		mainPanel.add( SVcontrol );         //, BorderLayout.NORTH );
-		mainPanel.add( EGcontrol );
-		mainPanel.add( logger.getList() );  //, BorderLayout.SOUTH );
-
-		SVcontrol.setLayout(new GridLayout(8,2));
+		final JPanel Logger    = new JPanel(); //own logs
+		//
+		//optional, thus initially "disabled"
 		EGcontrol.setVisible(false);
+		//
+		logger = new ControlPanelLogger();
+		Logger.add( new JScrollPane( logger.textArea ), BorderLayout.CENTER );
+		//
+		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+		mainPanel.add( SVcontrol );
+		mainPanel.add( EGcontrol );
+		mainPanel.add( Logger );
+
+		//SVcontrol = SVupperButtonsGrid, horizontalScreenSavingLine, SVbottomButtonsGrid
+		final JPanel SVupperButtonsGrid  = new JPanel();
+		final JPanel SVmiddleSSLine      = new JPanel();
+		final JPanel SVbottomButtonsGrid = new JPanel();
+		//
+		SVupperButtonsGrid.setLayout( new GridLayout(5,2));
+		SVmiddleSSLine.setLayout(     new BoxLayout(SVmiddleSSLine,BoxLayout.X_AXIS));
+		SVbottomButtonsGrid.setLayout(new GridLayout(2,2));
+		//
+		SVcontrol.setLayout(new BoxLayout(SVcontrol, BoxLayout.Y_AXIS));
+		SVcontrol.add( SVupperButtonsGrid );
+		SVcontrol.add( SVmiddleSSLine );
+		SVcontrol.add( SVbottomButtonsGrid );
 
 		//controls:
 		//q, o(UpdatePanel and then OverView),
@@ -134,34 +155,34 @@ public class CommandFromGUI
 		//logConsole
 
 		//'q'
-		Button btn = new Button("Close the SimViewer");
+		JButton btn = new JButton("Close the SimViewer");
 		btn.addActionListener( onClose );
-		SVcontrol.add(btn);
+		SVupperButtonsGrid.add(btn);
 
 		//'o'
-		btn = new Button("Update and report settings");
+		btn = new JButton("Update and report settings");
 		btn.addActionListener( (action) -> {
 				refreshPanelState();
 				scene.reportSettings(logger);
 			} );
-		SVcontrol.add(btn);
+		SVupperButtonsGrid.add(btn);
 
 		//'A'
 		btnOrientationAxes.addActionListener( (action) -> {
-				btnOrientationAxes.setLabel( scene.ToggleDisplayAxes() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
+				btnOrientationAxes.setText( scene.ToggleDisplayAxes() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
 			} );
-		SVcontrol.add(btnOrientationAxes);
+		SVupperButtonsGrid.add(btnOrientationAxes);
 
 		//'B'
 		btnSceneBorder.addActionListener( (action) -> {
-				btnSceneBorder.setLabel( scene.ToggleDisplaySceneBorder() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
+				btnSceneBorder.setText( scene.ToggleDisplaySceneBorder() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
 			} );
-		SVcontrol.add(btnSceneBorder);
+		SVupperButtonsGrid.add(btnSceneBorder);
 
 		//'R'
-		btn = new Button("Re-adapt scene size");
+		btn = new JButton("Re-adapt scene size");
 		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
-		SVcontrol.add(btn);
+		SVupperButtonsGrid.add(btn);
 
 		//overAll scale
 		spinner.setValue( scene.DsFactor );
@@ -177,7 +198,7 @@ public class CommandFromGUI
 		scaleHorizontalGroup.setLayout( new BoxLayout(scaleHorizontalGroup, BoxLayout.X_AXIS) );
 		scaleHorizontalGroup.add( sLabel );
 		scaleHorizontalGroup.add( sSpin );
-		SVcontrol.add(scaleHorizontalGroup);
+		SVupperButtonsGrid.add(scaleHorizontalGroup);
 
 		//'I'
 		btnLightRampsSetLabel();
@@ -185,40 +206,42 @@ public class CommandFromGUI
 				scene.ToggleFixedLights();
 				btnLightRampsSetLabel();
 			} );
-		SVcontrol.add(btnLightRamps);
+		SVupperButtonsGrid.add(btnLightRamps);
 
 		//'m'/'M'
 		btnFacesCulling.addActionListener( (action) -> {
 				if ( scene.IsFrontFacesCullingEnabled() )
 				{
 					scene.DisableFrontFaceCulling();
-					btnFacesCulling.setLabel( btnFacesCullingLabel_Enable );
+					btnFacesCulling.setText( btnFacesCullingLabel_Enable );
 				}
 				else
 				{
 					scene.EnableFrontFaceCulling();
-					btnFacesCulling.setLabel( btnFacesCullingLabel_Disable );
+					btnFacesCulling.setText( btnFacesCullingLabel_Disable );
 				}
 			} );
-		SVcontrol.add(btnFacesCulling);
+		SVupperButtonsGrid.add(btnFacesCulling);
 
 		//'1'
 		btnLightRampsDimmer.addActionListener( (action) -> { scene.DecreaseFixedLightsIntensity(); } );
-		SVcontrol.add(btnLightRampsDimmer);
+		SVupperButtonsGrid.add(btnLightRampsDimmer);
 
 		//'2'
 		btnLightRampsBrighter.addActionListener( (action) -> { scene.IncreaseFixedLightsIntensity(); } );
-		SVcontrol.add(btnLightRampsBrighter);
+		SVupperButtonsGrid.add(btnLightRampsBrighter);
 
 		//'S'
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		cbxScreenSaving.addActionListener( (action) -> { scene.savingScreenshots ^= true; } );
-		SVcontrol.add( cbxScreenSaving );
 		//
 		//path with screen shots
 		ssPath.setText( scene.savingScreenshotsFilename );
+		ssPath.setToolTipText("Enter empty text to bring up a \"File Save\" dialog.");
 		ssPath.addActionListener( (action) -> { updateSSPath(mainPanel); } );
-		SVcontrol.add(ssPath);
+		//
+		SVmiddleSSLine.add( cbxScreenSaving );
+		SVmiddleSSLine.add( ssPath );
 
 		return mainPanel;
 	}
@@ -226,17 +249,17 @@ public class CommandFromGUI
 
 	final String btnOrientationAxesLabel_Disable = "Disable orientation axes";
 	final String btnOrientationAxesLabel_Enable =  "Enable orientation axes";
-	final Button btnOrientationAxes = new Button( btnOrientationAxesLabel_Enable );
+	final JButton btnOrientationAxes = new JButton( btnOrientationAxesLabel_Enable );
 
 	final String btnSceneBorderLabel_Disable = "Disable scene border";
 	final String btnSceneBorderLabel_Enable =  "Enable scene border";
-	final Button btnSceneBorder = new Button( btnSceneBorderLabel_Enable );
+	final JButton btnSceneBorder = new JButton( btnSceneBorderLabel_Enable );
 
 	final SpinnerNumberModel spinner = new SpinnerNumberModel(1.0, 0.02, 1000.0, 0.1);
 
-	final Button btnLightRamps = new Button();
-	final Button btnLightRampsDimmer   = new Button("Make lights dimmer");
-	final Button btnLightRampsBrighter = new Button("Make lights brighter");
+	final JButton btnLightRamps = new JButton();
+	final JButton btnLightRampsDimmer   = new JButton("Make lights dimmer");
+	final JButton btnLightRampsBrighter = new JButton("Make lights brighter");
 	final String btnLightRampsLabel_None  = "Use both light ramps";
 	final String btnLightRampsLabel_Both  = "Use front light ramp";
 	final String btnLightRampsLabel_Front = "Use rear light ramp";
@@ -247,16 +270,16 @@ public class CommandFromGUI
 		switch (scene.ReportChosenFixedLights())
 		{
 		case NONE:
-			btnLightRamps.setLabel(btnLightRampsLabel_None);
+			btnLightRamps.setText(btnLightRampsLabel_None);
 			break;
 		case BOTH:
-			btnLightRamps.setLabel(btnLightRampsLabel_Both);
+			btnLightRamps.setText(btnLightRampsLabel_Both);
 			break;
 		case FRONT:
-			btnLightRamps.setLabel(btnLightRampsLabel_Front);
+			btnLightRamps.setText(btnLightRampsLabel_Front);
 			break;
 		case REAR:
-			btnLightRamps.setLabel(btnLightRampsLabel_Rear);
+			btnLightRamps.setText(btnLightRampsLabel_Rear);
 			break;
 		}
 
@@ -268,12 +291,12 @@ public class CommandFromGUI
 
 	final String btnFacesCullingLabel_Disable = "Make objects solid again";
 	final String btnFacesCullingLabel_Enable =  "Allow to see into objects";
-	final Button btnFacesCulling = new Button( btnFacesCullingLabel_Enable );
+	final JButton btnFacesCulling = new JButton( btnFacesCullingLabel_Enable );
 
 	final JCheckBox cbxScreenSaving = new JCheckBox( "Screen saving into " );
-	final TextField ssPath = new TextField();
+	final JTextField ssPath = new JTextField();
 	//
-	void updateSSPath(final Component upstreamComp)
+	void updateSSPath(final JComponent upstreamComp)
 	{
 		String newPath = ssPath.getText();
 		boolean sepPrinted = false;
@@ -341,8 +364,8 @@ public class CommandFromGUI
 	/** updates the panel switches to reflect the current state of the SimViewer */
 	public void refreshPanelState()
 	{
-		btnSceneBorder.setLabel( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
-		btnOrientationAxes.setLabel( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
+		btnSceneBorder.setText( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
+		btnOrientationAxes.setText( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
 		btnLightRampsSetLabel();
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		ssPath.setText( scene.savingScreenshotsFilename );
@@ -364,28 +387,28 @@ public class CommandFromGUI
 	    everything else is routed to the standard current System.out */
 	class ControlPanelLogger extends PrintStream
 	{
-		private final List log;
+		static private final String newline = "\n";
+		final JTextArea textArea;
 
 		ControlPanelLogger()
 		{
 			super(System.out);
 
-			log = new List(10);
-			log.add("Reported status:");
+			textArea = new JTextArea(10,48);
+			textArea.setEditable(false);
+			textArea.append("Reported status:" +newline);
 		}
 
-		public List getList() { return log; }
+		@Override
+		public void println(final String msg) { textArea.append(msg +newline); }
 
 		@Override
-		public void println(final String msg) { log.add(msg); }
-
-		@Override
-		public void println() { log.add("  "); }
+		public void println() { textArea.append(newline); }
 
 		public void separator()
 		{
 			dateObj.setTime( System.currentTimeMillis() );
-			log.add("-------------------------- " + dateObj.toString() + " --------------------------");
+			textArea.append("-------------------------- " + dateObj.toString() + " --------------------------" +newline);
 		}
 		//
 		//to avoid re-new()-ing with every new call of separator()
