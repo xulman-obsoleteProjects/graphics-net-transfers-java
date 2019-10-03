@@ -828,7 +828,7 @@ public class DisplayScene
 		public boolean G_Mode = true;   //the global purpose debug mode, operated with 'G'
 	}
 
-	/** signals if we want to have cells (spheres) displayed (even if cellsData is initially empty) */
+	/** signals if we want to have cells (points aka spheres) displayed (even if cellsData is initially empty) */
 	elementVisibility spheresShown = new elementVisibility();
 
 	/** signals if we want to have cell lines displayed */

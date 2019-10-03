@@ -56,8 +56,7 @@ public class CommandFromGUI
 		{
 			frame = new JFrame(showOwnControlPanelWithThisTitle);
 			frame.add( createPanel(onClose) );
-			frame.setMinimumSize( new Dimension(600, 500) );
-			refreshPanelState();
+			frame.setMinimumSize( new Dimension(600, 400) );
 			showPanel();
 		}
 		else frame = null;
@@ -168,12 +167,14 @@ public class CommandFromGUI
 		SVupperButtonsGrid.add(btn);
 
 		//'A'
+		btnOrientationAxes.setText( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
 		btnOrientationAxes.addActionListener( (action) -> {
 				btnOrientationAxes.setText( scene.ToggleDisplayAxes() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
 			} );
 		SVupperButtonsGrid.add(btnOrientationAxes);
 
 		//'B'
+		btnSceneBorder.setText( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
 		btnSceneBorder.addActionListener( (action) -> {
 				btnSceneBorder.setText( scene.ToggleDisplaySceneBorder() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
 			} );
@@ -209,6 +210,7 @@ public class CommandFromGUI
 		SVupperButtonsGrid.add(btnLightRamps);
 
 		//'m'/'M'
+		btnFacesCulling.setText( scene.IsFrontFacesCullingEnabled() ? btnFacesCullingLabel_Disable : btnFacesCullingLabel_Enable );
 		btnFacesCulling.addActionListener( (action) -> {
 				if ( scene.IsFrontFacesCullingEnabled() )
 				{
@@ -282,8 +284,8 @@ public class CommandFromGUI
 	final JButton btnLightRampsDimmer   = new JButton("Make lights dimmer");
 	final JButton btnLightRampsBrighter = new JButton("Make lights brighter");
 	final String btnLightRampsLabel_None  = "Use both light ramps";
-	final String btnLightRampsLabel_Both  = "Use front light ramp";
-	final String btnLightRampsLabel_Front = "Use rear light ramp";
+	final String btnLightRampsLabel_Both  = "Use only front light ramp";
+	final String btnLightRampsLabel_Front = "Use only rear light ramp";
 	final String btnLightRampsLabel_Rear  = "Use no light ramp";
 	//
 	private void btnLightRampsSetLabel()
@@ -316,6 +318,7 @@ public class CommandFromGUI
 
 	final JCheckBox cbxScreenSaving = new JCheckBox( "Screen saving into " );
 	final JTextField ssPath = new JTextField();
+	final JFileChooser fc = new JFileChooser();
 	//
 	void updateSSPath(final JComponent upstreamComp)
 	{
@@ -324,8 +327,6 @@ public class CommandFromGUI
 
 		if (newPath.length() == 0)
 		{
-			final JFileChooser fc = new JFileChooser();
-
 			if ( fc.showSaveDialog(upstreamComp) == JFileChooser.APPROVE_OPTION )
 			{
 				newPath = fc.getSelectedFile().getAbsolutePath();
@@ -387,12 +388,13 @@ public class CommandFromGUI
 	/** updates the panel switches to reflect the current state of the SimViewer */
 	public void refreshPanelState()
 	{
-		btnSceneBorder.setText( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
 		btnOrientationAxes.setText( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
+		btnSceneBorder.setText( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
+		spinner.setValue( scene.DsFactor );
 		btnLightRampsSetLabel();
+		btnFacesCulling.setText( scene.IsFrontFacesCullingEnabled() ? btnFacesCullingLabel_Disable : btnFacesCullingLabel_Enable );
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		ssPath.setText( scene.savingScreenshotsFilename );
-		spinner.setValue( scene.DsFactor );
 		cbxGarbageCtr.setSelected( scene.garbageCollecting );
 	}
 	//----------------------------------------------------------------------------
@@ -432,7 +434,7 @@ public class CommandFromGUI
 		public void separator()
 		{
 			dateObj.setTime( System.currentTimeMillis() );
-			textArea.append("-------------------------- " + dateObj.toString() + " --------------------------" +newline);
+			textArea.append("----------------------- " + dateObj.toString() + " -----------------------" +newline);
 		}
 		//
 		//to avoid re-new()-ing with every new call of separator()

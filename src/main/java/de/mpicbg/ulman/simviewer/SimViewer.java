@@ -183,6 +183,7 @@ public class SimViewer implements Command
 			"Controls of SimViewer @ port "+receivingPort,
 			(action) -> { CLIcontrol.interrupt(); });
 		GUIcontrol.flightRecorder = cmdFR;
+		GUIcontrol.refreshPanelState();
 
 		log.info("SimViewer started");
 

@@ -131,7 +131,7 @@ public class CommandFromCLI implements Runnable
 			System.out.println("D - Toggle \"garbage collection\" of old/not-recently-updated objects");
 			System.out.println();
 
-			System.out.println("c,C - Toggles display of the cell/general-debug spheres (shape)");
+			System.out.println("c,C - Toggles display of the cell/general-debug points (shape)");
 			System.out.println("l,L - Toggles display of the cell/general-debug lines");
 			System.out.println("f,F - Toggles display of the cell/general-debug vectors (forces)");
 			System.out.println("g,G - Toggles display of the cell-debug/general-debug");
@@ -185,7 +185,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'c':
-			System.out.println("Cell spheres displayed: "+scene.ToggleDisplayCellSpheres());
+			System.out.println("Cell points displayed: "+scene.ToggleDisplayCellSpheres());
 			break;
 		case 'l':
 			System.out.println("Cell lines displayed: "+scene.ToggleDisplayCellLines());
@@ -195,7 +195,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'C':
-			System.out.println("General debug spheres displayed: "+scene.ToggleDisplayGeneralDebugSpheres());
+			System.out.println("General debug points displayed: "+scene.ToggleDisplayGeneralDebugSpheres());
 			break;
 		case 'L':
 			System.out.println("General debug lines displayed: "+scene.ToggleDisplayGeneralDebugLines());
