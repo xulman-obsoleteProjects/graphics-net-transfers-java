@@ -843,6 +843,17 @@ public class DisplayScene
 	/** signals if we want to have general purpose "debugging" elements displayed */
 	private boolean generalDebugShown = false;
 
+	public boolean IsCellDebugShown()    { return cellDebugShown; }
+	public boolean IsGeneralDebugShown() { return cellDebugShown; }
+
+	public boolean IsCellSpheresShown() { return spheresShown.g_Mode; }
+	public boolean IsCellLinesShown()   { return linesShown.g_Mode; }
+	public boolean IsCellVectorsShown() { return vectorsShown.g_Mode; }
+
+	public boolean IsGeneralSpheresShown() { return spheresShown.G_Mode; }
+	public boolean IsGeneralLinesShown()   { return linesShown.G_Mode; }
+	public boolean IsGeneralVectorsShown() { return vectorsShown.G_Mode; }
+
 
 	public
 	boolean ToggleDisplayCellSpheres()
