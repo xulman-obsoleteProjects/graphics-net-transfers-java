@@ -32,6 +32,7 @@ package de.mpicbg.ulman.simviewer;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.PrintStream;
 
 /**
  * Creates a (Java Swing?) panel with a control buttons, switches etc. to
@@ -53,7 +54,8 @@ public class CommandFromGUI
 		{
 			frame = new JFrame(showOwnControlPanelWithThisTitle);
 			frame.add( createPanel(onClose) );
-			frame.setMinimumSize( new Dimension(300, 500) );
+			frame.setMinimumSize( new Dimension(700, 500) );
+			refreshPanelState();
 			showPanel();
 		}
 		else frame = null;
@@ -69,8 +71,22 @@ public class CommandFromGUI
 
 	private final JFrame frame;
 
-	public void showPanel() { if (frame != null) frame.setVisible(true);  }
-	public void hidePanel() { if (frame != null) frame.setVisible(false); }
+	public void showPanel()
+	{
+		if (frame != null)
+		{
+			frame.setVisible(true);
+			System.setOut( logger );
+		}
+	}
+	public void hidePanel()
+	{
+		if (frame != null)
+		{
+			System.setOut( System.out );
+			frame.setVisible(false);
+		}
+	}
 
 	public void closePanel()
 	{
@@ -90,7 +106,7 @@ public class CommandFromGUI
 
 		final JPanel SVcontrol = new JPanel(); //SimViewer
 		final JPanel EGcontrol = new JPanel(); //EmbryoGen
-		final ControlPanelLogger logger = new ControlPanelLogger();
+		logger = new ControlPanelLogger();
 
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.add( SVcontrol );         //, BorderLayout.NORTH );
@@ -121,7 +137,7 @@ public class CommandFromGUI
 		SVcontrol.add(btn);
 
 		btn = new Button("Update and report settings");
-		btn.addActionListener( (action) -> { refreshPanelState(); scene.reportSettings(); } );
+		btn.addActionListener( (action) -> { refreshPanelState(); scene.reportSettings(logger); } );
 		SVcontrol.add(btn);
 
 		return mainPanel;
@@ -142,19 +158,37 @@ public class CommandFromGUI
 	    the reference must be null */
 	CommandFromFlightRecorder flightRecorder = null;
 
+	private ControlPanelLogger logger = null;
 
-	class ControlPanelLogger //implements System.out-like functionality
+	/** implements functionality of the System.out.println() to print into the List panel,
+	    everything else is routed to the standard current System.out */
+	class ControlPanelLogger extends PrintStream
 	{
-		final List log;
+		private final List log;
 
 		ControlPanelLogger()
 		{
+			super(System.out);
+
 			log = new List(10);
 			log.add("Reported status:");
 		}
 
-		List getList() { return log; }
+		public List getList() { return log; }
 
-		void println(final String msg) { log.add(msg); }
+		@Override
+		public void println(final String msg) { log.add(msg); }
+
+		@Override
+		public void println() { log.add("  "); }
+
+		public void separator()
+		{
+			dateObj.setTime( System.currentTimeMillis() );
+			log.add("-------------------------- " + dateObj.toString() + " --------------------------");
+		}
+		//
+		//to avoid re-new()-ing with every new call of separator()
+		private java.util.Date dateObj = new java.util.Date();
 	}
 }
