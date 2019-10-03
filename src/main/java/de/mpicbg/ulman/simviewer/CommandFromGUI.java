@@ -119,34 +119,129 @@ public class CommandFromGUI
 		//controls:
 		//q, o(UpdatePanel and then OverView),
 		//A, B,
-		//R, I,
+		//R, scale!
+		//I, [mM] (boolean)
 		//1,2, (TextArea for current value)
-		//S, D,
+		//S, path
 		//d,W,
-		//v,V,
-		//m,M (boolean), showEGpanel
+		//D, showEGpanel
 		//
 		//EmbryoGenExtra - boolean
 		//P, booleans: c,C, l,L,f,F,g,G
+		//v,V,
 		//FR: 7,8,9,0, and TextArea for O
 		//
 		//logConsole
 
+		//'q'
 		Button btn = new Button("Close the SimViewer");
 		btn.addActionListener( onClose );
 		SVcontrol.add(btn);
 
+		//'o'
 		btn = new Button("Update and report settings");
-		btn.addActionListener( (action) -> { refreshPanelState(); scene.reportSettings(logger); } );
+		btn.addActionListener( (action) -> {
+				refreshPanelState();
+				scene.reportSettings(logger);
+			} );
 		SVcontrol.add(btn);
 
+		//'A'
+		btnOrientationAxes.addActionListener( (action) -> {
+				btnOrientationAxes.setLabel( scene.ToggleDisplayAxes() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
+			} );
+		SVcontrol.add(btnOrientationAxes);
+
+		//'B'
+		btnSceneBorder.addActionListener( (action) -> {
+				btnSceneBorder.setLabel( scene.ToggleDisplaySceneBorder() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
+			} );
+		SVcontrol.add(btnSceneBorder);
+
+		//'R'
+		btn = new Button("Re-adapt scene size");
+		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
+		SVcontrol.add(btn);
+
+		//overAll scale
+		btn = new Button("Scale the whole scene");
+		btn.setEnabled(false);
+		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
+		SVcontrol.add(btn);
+
+		//'I'
+		btnLightRampsSetLabel();
+		btnLightRamps.addActionListener( (action) -> {
+				scene.ToggleFixedLights();
+				btnLightRampsSetLabel();
+			} );
+		SVcontrol.add(btnLightRamps);
+
+		//'m'/'M'
+		btn = new Button("Enable front face culling");
+		btn.setEnabled(false);
+		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
+		SVcontrol.add(btn);
+
+		//'1'
+		btnLightRampsDimmer.addActionListener( (action) -> { scene.DecreaseFixedLightsIntensity(); } );
+		SVcontrol.add(btnLightRampsDimmer);
+
+		//'2'
+		btnLightRampsBrighter.addActionListener( (action) -> { scene.IncreaseFixedLightsIntensity(); } );
+		SVcontrol.add(btnLightRampsBrighter);
+
 		return mainPanel;
+	}
+	//----------------------------------------------------------------------------
+
+	final String btnOrientationAxesLabel_Disable = "Disable orientation axes";
+	final String btnOrientationAxesLabel_Enable =  "Enable orientation axes";
+	final Button btnOrientationAxes = new Button( btnOrientationAxesLabel_Enable );
+
+	final String btnSceneBorderLabel_Disable = "Disable scene border";
+	final String btnSceneBorderLabel_Enable =  "Enable scene border";
+	final Button btnSceneBorder = new Button( btnSceneBorderLabel_Enable );
+
+	final Button btnLightRamps = new Button();
+	final Button btnLightRampsDimmer   = new Button("Make lights dimmer");
+	final Button btnLightRampsBrighter = new Button("Make lights brighter");
+	final String btnLightRampsLabel_None  = "Use both light ramps";
+	final String btnLightRampsLabel_Both  = "Use front light ramp";
+	final String btnLightRampsLabel_Front = "Use rear light ramp";
+	final String btnLightRampsLabel_Rear  = "Use no light ramp";
+	//
+	private void btnLightRampsSetLabel()
+	{
+		switch (scene.ReportChosenFixedLights())
+		{
+		case NONE:
+			btnLightRamps.setLabel(btnLightRampsLabel_None);
+			break;
+		case BOTH:
+			btnLightRamps.setLabel(btnLightRampsLabel_Both);
+			break;
+		case FRONT:
+			btnLightRamps.setLabel(btnLightRampsLabel_Front);
+			break;
+		case REAR:
+			btnLightRamps.setLabel(btnLightRampsLabel_Rear);
+			break;
+		}
+
+		final boolean lightStatus = scene.IsFixedLightsAvailable();
+		btnLightRamps.setEnabled(lightStatus);
+		btnLightRampsDimmer.setEnabled(lightStatus);
+		btnLightRampsBrighter.setEnabled(lightStatus);
 	}
 	//----------------------------------------------------------------------------
 
 	/** updates the panel switches to reflect the current state of the SimViewer */
 	public void refreshPanelState()
 	{
+		btnSceneBorder.setLabel( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
+		btnOrientationAxes.setLabel( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
+		btnLightRampsSetLabel();
 	}
 	//----------------------------------------------------------------------------
 
