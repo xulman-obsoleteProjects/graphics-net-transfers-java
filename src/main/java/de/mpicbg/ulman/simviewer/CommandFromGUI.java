@@ -243,6 +243,27 @@ public class CommandFromGUI
 		SVmiddleSSLine.add( cbxScreenSaving );
 		SVmiddleSSLine.add( ssPath );
 
+		//'d'
+		btn = new JButton("Delete not-recently updated objects");
+		btn.addActionListener( (action) -> { scene.garbageCollect(1); } );
+		SVbottomButtonsGrid.add(btn);
+
+		//'W'
+		btn = new JButton("Delete all SimViewer's objects");
+		btn.addActionListener( (action) -> { scene.removeAllObjects(); } );
+		SVbottomButtonsGrid.add(btn);
+
+		//'D'
+		cbxGarbageCtr.setSelected( scene.garbageCollecting );
+		cbxGarbageCtr.addActionListener( (action) -> { scene.garbageCollecting ^= true; } );
+		SVbottomButtonsGrid.add(cbxGarbageCtr);
+
+		//show EGcontrol
+		JCheckBox cbx = new JCheckBox("Advanced controls panel");
+		cbx.setSelected( EGcontrol.isVisible() );
+		cbx.addActionListener( (action) -> { EGcontrol.setVisible( !EGcontrol.isVisible() ); } );
+		SVbottomButtonsGrid.add(cbx);
+
 		return mainPanel;
 	}
 	//----------------------------------------------------------------------------
@@ -359,6 +380,8 @@ public class CommandFromGUI
 
 		return true;
 	}
+
+	final JCheckBox cbxGarbageCtr = new JCheckBox( "Garbage collection of old objects" );
 	//----------------------------------------------------------------------------
 
 	/** updates the panel switches to reflect the current state of the SimViewer */
@@ -370,6 +393,7 @@ public class CommandFromGUI
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		ssPath.setText( scene.savingScreenshotsFilename );
 		spinner.setValue( scene.DsFactor );
+		cbxGarbageCtr.setSelected( scene.garbageCollecting );
 	}
 	//----------------------------------------------------------------------------
 
