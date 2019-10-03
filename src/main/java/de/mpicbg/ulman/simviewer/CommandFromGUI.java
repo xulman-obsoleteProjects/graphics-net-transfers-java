@@ -200,6 +200,16 @@ public class CommandFromGUI
 		btnLightRampsBrighter.addActionListener( (action) -> { scene.IncreaseFixedLightsIntensity(); } );
 		SVcontrol.add(btnLightRampsBrighter);
 
+		//'S'
+		cbxScreenSaving.setSelected( scene.savingScreenshots );
+		cbxScreenSaving.addActionListener( (action) -> { scene.savingScreenshots ^= true; } );
+		SVcontrol.add( cbxScreenSaving );
+		//
+		//path with screen shots
+		ssPath.setText( scene.savingScreenshotsFilename );
+		ssPath.addActionListener( (action) -> { updateSSPath(mainPanel); } );
+		SVcontrol.add(ssPath);
+
 		return mainPanel;
 	}
 	//----------------------------------------------------------------------------
@@ -247,6 +257,73 @@ public class CommandFromGUI
 	final String btnFacesCullingLabel_Disable = "Make objects solid again";
 	final String btnFacesCullingLabel_Enable =  "Allow to see into objects";
 	final Button btnFacesCulling = new Button( btnFacesCullingLabel_Enable );
+
+	final JCheckBox cbxScreenSaving = new JCheckBox( "Screen saving into " );
+	final TextField ssPath = new TextField();
+	//
+	void updateSSPath(final Component upstreamComp)
+	{
+		String newPath = ssPath.getText();
+		boolean sepPrinted = false;
+
+		if (newPath.length() == 0)
+		{
+			final JFileChooser fc = new JFileChooser();
+
+			if ( fc.showSaveDialog(upstreamComp) == JFileChooser.APPROVE_OPTION )
+			{
+				newPath = fc.getSelectedFile().getAbsolutePath();
+				if ( !isValidSSPath(newPath) )
+				{
+					//try to insert %04d before the last '.'
+					logger.separator(); sepPrinted = true;
+					logger.println("Warning, injecting %04d into your filename: "+newPath);
+					int i = newPath.lastIndexOf('.');
+					if (i > -1)
+						newPath = newPath.substring(0,i)+"%04d"+newPath.substring(i);
+				}
+			}
+			else
+				newPath = scene.savingScreenshotsFilename;
+		}
+
+		if (isValidSSPath(newPath))
+		{
+			//update only if all tests passed
+			scene.savingScreenshotsFilename = newPath;
+		}
+		else
+		{
+			//else report how to fix the path
+			if (!sepPrinted) logger.separator();
+			logger.println("Your filename: "+newPath);
+			logger.println("must contain character '%', followed by zero or more digits, followed by 'd', e.g.,");
+			logger.println("%03d to obtain zero-padded three-digits-wide numbering or %d numbering w/o padding.");
+		}
+
+		//in any case, synchronize the visible text with the current internal one
+		ssPath.setText( scene.savingScreenshotsFilename );
+	}
+	//
+	boolean isValidSSPath(final String newPath)
+	{
+		//test if the newPath is valid, that is, if it contains the '%[0-9]*d'
+		int i = newPath.indexOf('%');
+		if (i == -1) return false;
+
+		int d = newPath.indexOf('d', i);
+		if (d == -1) return false;
+
+		if (d-i > 1)
+		{
+			//test if there are only digits inbetween the '%' and 'd'
+			final char[] chars = new char[d-i-1];
+			newPath.getChars(i+1,d,chars,0);
+			for (char c : chars) if (c < 48 || c > 57) return false;
+		}
+
+		return true;
+	}
 	//----------------------------------------------------------------------------
 
 	/** updates the panel switches to reflect the current state of the SimViewer */
@@ -255,6 +332,8 @@ public class CommandFromGUI
 		btnSceneBorder.setLabel( scene.IsSceneBorderVisible() ? btnSceneBorderLabel_Disable : btnSceneBorderLabel_Enable);
 		btnOrientationAxes.setLabel( scene.IsSceneAxesVisible() ? btnOrientationAxesLabel_Disable : btnOrientationAxesLabel_Enable);
 		btnLightRampsSetLabel();
+		cbxScreenSaving.setSelected( scene.savingScreenshots );
+		ssPath.setText( scene.savingScreenshotsFilename );
 	}
 	//----------------------------------------------------------------------------
 
