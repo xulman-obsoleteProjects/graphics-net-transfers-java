@@ -164,10 +164,20 @@ public class CommandFromGUI
 		SVcontrol.add(btn);
 
 		//overAll scale
-		btn = new Button("Scale the whole scene");
-		btn.setEnabled(false);
-		btn.addActionListener( (action) -> { scene.ResizeScene(); } );
-		SVcontrol.add(btn);
+		spinner.setValue( scene.DsFactor );
+		spinner.addChangeListener( (action) -> { scene.RescaleScene(spinner.getNumber().floatValue()); } );
+		//
+		final JLabel sLabel = new JLabel("Scale the whole scene: ");
+		sLabel.setBorder( BorderFactory.createEmptyBorder(0,8,0,0) );
+		//
+		final JSpinner sSpin = new JSpinner(spinner);
+		sSpin.setBorder( BorderFactory.createEmptyBorder(0,0,0,7) );
+		//
+		final JPanel scaleHorizontalGroup = new JPanel();
+		scaleHorizontalGroup.setLayout( new BoxLayout(scaleHorizontalGroup, BoxLayout.X_AXIS) );
+		scaleHorizontalGroup.add( sLabel );
+		scaleHorizontalGroup.add( sSpin );
+		SVcontrol.add(scaleHorizontalGroup);
 
 		//'I'
 		btnLightRampsSetLabel();
@@ -221,6 +231,8 @@ public class CommandFromGUI
 	final String btnSceneBorderLabel_Disable = "Disable scene border";
 	final String btnSceneBorderLabel_Enable =  "Enable scene border";
 	final Button btnSceneBorder = new Button( btnSceneBorderLabel_Enable );
+
+	final SpinnerNumberModel spinner = new SpinnerNumberModel(1.0, 0.02, 1000.0, 0.1);
 
 	final Button btnLightRamps = new Button();
 	final Button btnLightRampsDimmer   = new Button("Make lights dimmer");
@@ -334,6 +346,7 @@ public class CommandFromGUI
 		btnLightRampsSetLabel();
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		ssPath.setText( scene.savingScreenshotsFilename );
+		spinner.setValue( scene.DsFactor );
 	}
 	//----------------------------------------------------------------------------
 
