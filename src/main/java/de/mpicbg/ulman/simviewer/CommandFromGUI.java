@@ -35,6 +35,7 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.io.PrintStream;
+import java.io.IOException;
 
 /**
  * Creates a (Java Swing?) panel with a control buttons, switches etc. to
@@ -136,6 +137,9 @@ public class CommandFromGUI
 		SVcontrol.add( SVmiddleSSLine );
 		SVcontrol.add( SVbottomButtonsGrid );
 
+		//EGcontrol = directly a grid of controls
+		EGcontrol.setLayout(new GridLayout(5,3));
+
 		//controls:
 		//q, o(UpdatePanel and then OverView),
 		//A, B,
@@ -147,12 +151,13 @@ public class CommandFromGUI
 		//D, showEGpanel
 		//
 		//EmbryoGenExtra - boolean
-		//P, booleans: c,C, l,L,f,F,g,G
 		//v,V,
+		//booleans: c,C,l,L,f,F,g,G
 		//FR: 7,8,9,0, and TextArea for O
 		//
 		//logConsole
 
+		//content of the SVcontrol:
 		//'q'
 		JButton btn = new JButton("Close the SimViewer");
 		btn.addActionListener( onClose );
@@ -265,6 +270,140 @@ public class CommandFromGUI
 		cbx.setSelected( EGcontrol.isVisible() );
 		cbx.addActionListener( (action) -> { EGcontrol.setVisible( !EGcontrol.isVisible() ); } );
 		SVbottomButtonsGrid.add(cbx);
+
+		//content of the EGcontrol:
+		//'v'
+		btn = new JButton("Down-scale vectors");
+		btn.addActionListener( (action) -> {
+				scene.setVectorsStretch(0.80f * scene.getVectorsStretch());
+				logger.println("new vector stretch: "+scene.getVectorsStretch());
+			} );
+		EGcontrol.add(btn);
+
+		//'V'
+		btn = new JButton("Up-scale vectors");
+		btn.addActionListener( (action) -> {
+				scene.setVectorsStretch(1.25f * scene.getVectorsStretch());
+				logger.println("new vector stretch: "+scene.getVectorsStretch());
+			} );
+		EGcontrol.add(btn);
+
+		//DEBUG SWITCHES
+		cbxDbgMasterCell.setSelected( scene.IsCellDebugShown() );
+		cbxDbgMasterCell.addActionListener( (action) -> { scene.ToggleDisplayCellDebug(); } );
+
+		cbxDbgMasterGlobal.setSelected( scene.IsGeneralDebugShown() );
+		cbxDbgMasterGlobal.addActionListener( (action) -> { scene.ToggleDisplayGeneralDebug(); } );
+
+		cbxVisCellSpheres.setSelected( scene.IsCellSpheresShown() );
+		cbxVisCellSpheres.addActionListener( (action) -> { scene.ToggleDisplayCellSpheres(); } );
+
+		cbxVisCellLines.setSelected( scene.IsCellLinesShown() );
+		cbxVisCellLines.addActionListener( (action) -> { scene.ToggleDisplayCellLines(); } );
+
+		cbxVisCellVectors.setSelected( scene.IsCellVectorsShown() );
+		cbxVisCellVectors.addActionListener( (action) -> { scene.ToggleDisplayCellVectors(); } );
+
+		cbxVisGlobalSpheres.setSelected( scene.IsGeneralSpheresShown() );
+		cbxVisGlobalSpheres.addActionListener( (action) -> { scene.ToggleDisplayGeneralDebugSpheres(); } );
+
+		cbxVisGlobalLines.setSelected( scene.IsGeneralLinesShown() );
+		cbxVisGlobalLines.addActionListener( (action) -> { scene.ToggleDisplayGeneralDebugLines(); } );
+
+		cbxVisGlobalVectors.setSelected( scene.IsGeneralVectorsShown() );
+		cbxVisGlobalVectors.addActionListener( (action) -> { scene.ToggleDisplayGeneralDebugVectors(); } );
+
+		//FR: 7,8,9,0
+		btnFRfirst.setEnabled( flightRecorder != null );
+		btnFRfirst.setToolTipText("shortcut key is '7'");
+		btnFRfirst.addActionListener( (action) -> {
+				try {
+					if (!flightRecorder.rewindAndSendFirstTimepoint())
+						logger.println("No FlightRecording file is opened.");
+				}
+				catch (InterruptedException e) {
+					logger.println("Problem processing FlightRecording: "+e.getMessage());
+				}
+			} );
+
+		btnFRprev.setEnabled( flightRecorder != null );
+		btnFRprev.setToolTipText("shortcut key is '8'");
+		btnFRprev.addActionListener( (action) -> {
+				try {
+					if (!flightRecorder.sendPrevTimepointMessages())
+						logger.println("No FlightRecording file is opened.");
+				}
+				catch (InterruptedException e) {
+					logger.println("Problem processing FlightRecording: "+e.getMessage());
+				}
+			} );
+
+		btnFRnext.setEnabled( flightRecorder != null );
+		btnFRnext.setToolTipText("shortcut key is '9'");
+		btnFRnext.addActionListener( (action) -> {
+				try {
+					if (!flightRecorder.sendNextTimepointMessages())
+						logger.println("No FlightRecording file is opened.");
+				}
+				catch (InterruptedException e) {
+					logger.println("Problem processing FlightRecording: "+e.getMessage());
+				}
+			} );
+
+		btnFRlast.setEnabled( flightRecorder != null );
+		btnFRlast.setToolTipText("shortcut key is '0'");
+		btnFRlast.addActionListener( (action) -> {
+				try {
+					if (!flightRecorder.rewindAndSendLastTimepoint())
+						logger.println("No FlightRecording file is opened.");
+				}
+				catch (InterruptedException e) {
+					logger.println("Problem processing FlightRecording: "+e.getMessage());
+				}
+			} );
+
+		//FR: 'O'
+		FRfile.setEnabled( flightRecorder != null );
+		FRfile.setText( "some FlightRecording file..." );
+		FRfile.setToolTipText("Enter empty text to bring up a \"File Open\" dialog.");
+		FRfile.addActionListener( (action) -> {
+				try {
+					//some file name provided or shall we ask for some?
+					if (FRfile.getText().length() > 0 || fc.showOpenDialog(mainPanel) == JFileChooser.APPROVE_OPTION )
+					{
+						//== 0 -> dialog must have been opened, take the file name from it
+						if (FRfile.getText().length() == 0)
+							FRfile.setText( fc.getSelectedFile().getAbsolutePath() );
+
+						logger.separator();
+						flightRecorder.open(FRfile.getText());
+						logger.println("Opened this FlightRecording: "+FRfile.getText());
+						flightRecorder.sendNextTimepointMessages();
+					}
+				}
+				catch (IOException | InterruptedException e) {
+					logger.println("Problem opening a FlightRecording: "+e.getMessage());
+				}
+			} );
+
+		//finally, add the control in the right order
+		EGcontrol.add(FRfile);
+
+		EGcontrol.add(cbxDbgMasterCell);
+		EGcontrol.add(cbxDbgMasterGlobal);
+		EGcontrol.add(btnFRfirst);
+
+		EGcontrol.add(cbxVisCellSpheres);
+		EGcontrol.add(cbxVisGlobalSpheres);
+		EGcontrol.add(btnFRprev);
+
+		EGcontrol.add(cbxVisCellLines);
+		EGcontrol.add(cbxVisGlobalLines);
+		EGcontrol.add(btnFRnext);
+
+		EGcontrol.add(cbxVisCellVectors);
+		EGcontrol.add(cbxVisGlobalVectors);
+		EGcontrol.add(btnFRlast);
 
 		return mainPanel;
 	}
@@ -383,6 +522,23 @@ public class CommandFromGUI
 	}
 
 	final JCheckBox cbxGarbageCtr = new JCheckBox( "Garbage collection of old objects" );
+
+	final JCheckBox cbxDbgMasterCell    = new JCheckBox( "Cell debug objects" );
+	final JCheckBox cbxDbgMasterGlobal  = new JCheckBox( "Global debug object" );
+	//
+	final JCheckBox cbxVisCellSpheres   = new JCheckBox( "Cell points" );
+	final JCheckBox cbxVisCellLines     = new JCheckBox( "Cell lines" );
+	final JCheckBox cbxVisCellVectors   = new JCheckBox( "Cell vectors" );
+	//
+	final JCheckBox cbxVisGlobalSpheres = new JCheckBox( "Global points" );
+	final JCheckBox cbxVisGlobalLines   = new JCheckBox( "Global lines" );
+	final JCheckBox cbxVisGlobalVectors = new JCheckBox( "Global vectors" );
+
+	final JButton btnFRfirst = new JButton("FR: First TP");
+	final JButton btnFRprev  = new JButton("FR: Previous TP");
+	final JButton btnFRnext  = new JButton("FR: Next TP");
+	final JButton btnFRlast  = new JButton("FR: Last TP");
+	final JTextField FRfile  = new JTextField();
 	//----------------------------------------------------------------------------
 
 	/** updates the panel switches to reflect the current state of the SimViewer */
@@ -396,6 +552,19 @@ public class CommandFromGUI
 		cbxScreenSaving.setSelected( scene.savingScreenshots );
 		ssPath.setText( scene.savingScreenshotsFilename );
 		cbxGarbageCtr.setSelected( scene.garbageCollecting );
+		FRfile.setEnabled( flightRecorder != null );
+		btnFRfirst.setEnabled( flightRecorder != null );
+		btnFRprev.setEnabled( flightRecorder != null );
+		btnFRnext.setEnabled( flightRecorder != null );
+		btnFRlast.setEnabled( flightRecorder != null );
+		cbxDbgMasterCell.setSelected( scene.IsCellDebugShown() );
+		cbxDbgMasterGlobal.setSelected( scene.IsGeneralDebugShown() );
+		cbxVisCellSpheres.setSelected( scene.IsCellSpheresShown() );
+		cbxVisCellLines.setSelected( scene.IsCellLinesShown() );
+		cbxVisCellVectors.setSelected( scene.IsCellVectorsShown() );
+		cbxVisGlobalSpheres.setSelected( scene.IsGeneralSpheresShown() );
+		cbxVisGlobalLines.setSelected( scene.IsGeneralLinesShown() );
+		cbxVisGlobalVectors.setSelected( scene.IsGeneralVectorsShown() );
 	}
 	//----------------------------------------------------------------------------
 
