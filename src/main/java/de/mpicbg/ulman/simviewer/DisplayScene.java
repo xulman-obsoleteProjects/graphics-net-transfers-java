@@ -33,6 +33,7 @@ import cleargl.GLVector;
 import graphics.scenery.*;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import sc.iview.SciView;
+import java.io.PrintStream;
 import java.util.Map;
 import java.util.HashMap;
 import de.mpicbg.ulman.simviewer.elements.Point;
@@ -150,7 +151,7 @@ public class DisplayScene
 	final float[] sceneSize;
 
 	/** the common scaling factor applied on all spatial units before their submitted to the scene */
-	final float DsFactor;
+	float DsFactor;
 
 	/** fixed lookup table with colors, in the form of materials... */
 	Palette materials;
@@ -160,12 +161,27 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
+	public
+	boolean IsFrontFacesCullingEnabled()
+	{ return (materials.getMaterial(0).getCullingMode() == Material.CullingMode.Front); }
+
 	/** attempts to turn on/off the "push mode", and reports the state */
 	public
 	boolean TogglePushMode()
 	{
 		sciView.setPushMode( !sciView.getPushMode() );
 		return sciView.getPushMode();
+	}
+
+	/** resets the this.DsFactor scaling of the whole scene, without changing any coordinate
+	    of any displayed (even when set to not visible) object, only the this.scene scaling
+	    is affected; also lights are affected because they are treated separately in SimViewer */
+	public
+	void RescaleScene(final float newDsFactor)
+	{
+		RepositionFixedLightsRamp(newDsFactor);
+		scene.setScale(new GLVector(newDsFactor,3));
+		DsFactor = newDsFactor;
 	}
 
 	/** resets the scene offset and size to its current content plus 10 % relative margin,
@@ -367,6 +383,10 @@ public class DisplayScene
 
 		return axesShown;
 	}
+
+	public
+	boolean IsSceneAxesVisible()
+	{ return axesShown; }
 	//----------------------------------------------------------------------------
 
 
@@ -470,6 +490,10 @@ public class DisplayScene
 
 		return borderShown;
 	}
+
+	public
+	boolean IsSceneBorderVisible()
+	{ return borderShown; }
 	//----------------------------------------------------------------------------
 
 
@@ -555,6 +579,26 @@ public class DisplayScene
 	}
 
 	public
+	void RepositionFixedLightsRamp(final float newDsFactor)
+	{
+		if (fixedLights == null) return;
+
+		final float correction = newDsFactor / DsFactor;
+
+		for (PointLight[] lightRamp : fixedLights)
+			for (PointLight l : lightRamp)
+			{
+				final GLVector pos = l.getPosition();
+				for (int i = 0; i < 3; ++i)
+                    pos.set(i, pos.get(i)*correction);
+				l.setPosition( pos );
+
+				l.setLightRadius( l.getLightRadius()*correction );
+				l.setIntensity( l.getIntensity()*correction );
+			}
+	}
+
+	public
 	void RemoveFixedLightsRamp()
 	{
 		if (fixedLights == null) return;
@@ -631,17 +675,28 @@ public class DisplayScene
 
 		return curInt;
 	}
+
+	public
+	fixedLightsState ReportChosenFixedLights()
+	{ return fixedLightsChoosen; }
+
+	public
+	boolean IsFixedLightsAvailable()
+	{ return (fixedLights != null); }
 	//----------------------------------------------------------------------------
 
 
 	/** flag for external modules to see if they should call saveNextScreenshot() */
 	public boolean savingScreenshots = false;
 
+	/** flag for external modules to see if they should call saveNextScreenshot() */
+	public String savingScreenshotsFilename = "/tmp/frame%04d.png";
+
 	/** helper method to save the current content of the scene into /tmp/frameXXXX.png */
 	public
 	void saveNextScreenshot()
 	{
-		final String filename = String.format("/tmp/frame%04d.png",tickCounter);
+		final String filename = String.format(savingScreenshotsFilename,tickCounter);
 		System.out.println("Saving screenshot: "+filename);
 		sciView.getSceneryRenderer().screenshot(filename,true);
 	}
@@ -773,7 +828,7 @@ public class DisplayScene
 		public boolean G_Mode = true;   //the global purpose debug mode, operated with 'G'
 	}
 
-	/** signals if we want to have cells (spheres) displayed (even if cellsData is initially empty) */
+	/** signals if we want to have cells (points aka spheres) displayed (even if cellsData is initially empty) */
 	elementVisibility spheresShown = new elementVisibility();
 
 	/** signals if we want to have cell lines displayed */
@@ -787,6 +842,17 @@ public class DisplayScene
 
 	/** signals if we want to have general purpose "debugging" elements displayed */
 	private boolean generalDebugShown = false;
+
+	public boolean IsCellDebugShown()    { return cellDebugShown; }
+	public boolean IsGeneralDebugShown() { return cellDebugShown; }
+
+	public boolean IsCellSpheresShown() { return spheresShown.g_Mode; }
+	public boolean IsCellLinesShown()   { return linesShown.g_Mode; }
+	public boolean IsCellVectorsShown() { return vectorsShown.g_Mode; }
+
+	public boolean IsGeneralSpheresShown() { return spheresShown.G_Mode; }
+	public boolean IsGeneralLinesShown()   { return linesShown.G_Mode; }
+	public boolean IsGeneralVectorsShown() { return vectorsShown.G_Mode; }
 
 
 	public
@@ -1003,21 +1069,28 @@ public class DisplayScene
 	public
 	void reportSettings()
 	{
-		System.out.println("push mode       : " + sciView.getPushMode() + "  \tscreenshots            : " + savingScreenshots);
-		System.out.println("garbage collect.: " + garbageCollecting     + "  \ttickCounter            : " + tickCounter);
-		System.out.println("scene border    : " + borderShown           + "  \torientation compass    : " + axesShown);
-		System.out.println("scene offset    : " + sceneOffset[0]+","+sceneOffset[1]+","+sceneOffset[2]+" microns");
-		System.out.println("scene size      : " + sceneSize[0]  +","+sceneSize[1]  +","+sceneSize[2]  +" microns");
-		System.out.println("scene lights    : " + fixedLightsChoosen);
-		System.out.println("visibility      : 'g' 'G'"                                                               +  "\t'g' mode   (cell debug): " + cellDebugShown);
-		System.out.println("         points :  "+(spheresShown.g_Mode? "Y":"N")+"   "+(spheresShown.G_Mode? "Y":"N") + " \t'G' mode (global debug): " + generalDebugShown);
-		System.out.println("         lines  :  "+(  linesShown.g_Mode? "Y":"N")+"   "+(  linesShown.G_Mode? "Y":"N") + " \tvector elongation      : " + vectorsStretch + "x");
-		System.out.println("         vectors:  "+(vectorsShown.g_Mode? "Y":"N")+"   "+(vectorsShown.G_Mode? "Y":"N") + " \tfront faces culling    : " + (materials.getMaterial(0).getCullingMode() == Material.CullingMode.Front));
+		reportSettings(System.out);
+	}
 
-		System.out.println("number of points: " + this.pointNodes.size() + "\t  lines: "+this.lineNodes.size() + "\t  vectors: "+this.vectorNodes.size());
-		System.out.println("color legend    :        white: velocity, 1stInnerMost2Yolk");
-		System.out.println(" red: overlap            green: cell&skeleton          blue: friction, skelDev");
-		System.out.println("cyan: body             magenta: tracks, rep&drive    yellow: slide, 2ndInnerMost2Yolk, tracksFF");
+	public
+	void reportSettings(final PrintStream m)
+	{
+		m.println("------------- SimViewer's current status: -------------");
+		m.println("push mode       : " + sciView.getPushMode() + "  \tscreenshots            : " + savingScreenshots);
+		m.println("garbage collect.: " + garbageCollecting     + "  \ttickCounter            : " + tickCounter);
+		m.println("scene lights    : " + fixedLightsChoosen    + "  \tscreenshots path       : " + savingScreenshotsFilename);
+		m.println("scene border    : " + borderShown           + "  \torientation compass    : " + axesShown);
+		m.println("scene offset    : " + sceneOffset[0]+","+sceneOffset[1]+","+sceneOffset[2]+" microns");
+		m.println("scene size      : " + sceneSize[0]  +","+sceneSize[1]  +","+sceneSize[2]  +" microns");
+		m.println("visibility      : 'g' 'G'"                                                               +  "\t'g' mode   (cell debug): " + cellDebugShown);
+		m.println("         points :  "+(spheresShown.g_Mode? "Y":"N")+"   "+(spheresShown.G_Mode? "Y":"N") + " \t'G' mode (global debug): " + generalDebugShown);
+		m.println("         lines  :  "+(  linesShown.g_Mode? "Y":"N")+"   "+(  linesShown.G_Mode? "Y":"N") + " \tvector elongation      : " + vectorsStretch + "x");
+		m.println("         vectors:  "+(vectorsShown.g_Mode? "Y":"N")+"   "+(vectorsShown.G_Mode? "Y":"N") + " \tfront faces culling    : " + IsFrontFacesCullingEnabled());
+
+		m.println("number of points: " + this.pointNodes.size() + "\t  lines: "+this.lineNodes.size() + "\t  vectors: "+this.vectorNodes.size());
+		m.println("color legend    :        white: velocity, 1stInnerMost2Yolk");
+		m.println(" red: overlap            green: cell&skeleton          blue: friction, skelDev");
+		m.println("cyan: body             magenta: tracks, rep&drive    yellow: slide, 2ndInnerMost2Yolk, tracksFF");
 	}
 	//----------------------------------------------------------------------------
 
