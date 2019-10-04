@@ -34,6 +34,8 @@ import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.PrintStream;
 import java.io.IOException;
 
@@ -95,6 +97,8 @@ public class CommandFromGUI
 		if (frame != null)
 		{
 			hidePanel();
+			logger.textPaneAutoScroller.interrupt();
+			logger.textArea.removeMouseListener(logger.mouseReader);
 			frame.dispose();
 		}
 	}
@@ -116,7 +120,7 @@ public class CommandFromGUI
 		EGcontrol.setVisible(false);
 		//
 		logger = new ControlPanelLogger();
-		Logger.add( new JScrollPane( logger.textArea ), BorderLayout.CENTER );
+		Logger.add( logger.textPane, BorderLayout.CENTER );
 		//
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.add( SVcontrol );
@@ -582,31 +586,98 @@ public class CommandFromGUI
 	    everything else is routed to the standard current System.out */
 	class ControlPanelLogger extends PrintStream
 	{
+		//content...
 		static private final String newline = "\n";
-		final JTextArea textArea;
+		private final JTextArea textArea;
+
+		//form...
+		final JScrollPane        textPane;
+		private final Thread     textPaneAutoScroller;
+		private final JScrollBar textPaneScrlBar;
+
+		//to aid auto-scrolling
+		private boolean contentChanged = false;
+		private boolean scrollingEnabled = true;
 
 		ControlPanelLogger()
 		{
 			super(System.out);
 
+			//create the text container itself
 			textArea = new JTextArea(10,48);
 			textArea.setEditable(false);
+			textArea.addMouseListener(mouseReader);
 			textArea.append("Reported status:" +newline);
+
+			//place it into a scrollable Container
+			textPane = new JScrollPane( textArea,
+				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED );
+
+			//and setup the autoscrolling, that makes the container to
+			//always show bottom of the text area
+			textPaneScrlBar = textPane.getVerticalScrollBar();
+			textPaneAutoScroller = new Thread( () -> {
+					try {
+						while (true)
+						{
+							Thread.sleep(2000);
+							//only scroll down if there is something new (we could have always
+							//asked to scroll down but we hope testing the flag is way faster)
+							//and if the area is not "occupied" by the user (e.g. by reading it)
+							if (contentChanged && scrollingEnabled)
+							{
+								scrollDownThePane();
+								contentChanged = false;
+							}
+						}
+					} catch (InterruptedException e) {}
+				} );
+			textPaneAutoScroller.start();
+
+			//closePanel() of the containing class removes the mouse listener and stops the autoscrolling thread
+		}
+
+		final MouseListener mouseReader = new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent e) { }
+			@Override
+			public void mousePressed(MouseEvent e) { }
+			@Override
+			public void mouseReleased(MouseEvent e) { }
+			@Override
+			public void mouseEntered(MouseEvent e) { scrollingEnabled = false; }
+			@Override
+			public void mouseExited(MouseEvent e) { scrollingEnabled = true; }
+		};
+
+		@Override
+		public void println(final String msg)
+		{
+			textArea.append(msg +newline);
+			contentChanged = true;
 		}
 
 		@Override
-		public void println(final String msg) { textArea.append(msg +newline); }
-
-		@Override
-		public void println() { textArea.append(newline); }
+		public void println()
+		{
+			textArea.append(newline);
+			contentChanged = true;
+		}
 
 		public void separator()
 		{
 			dateObj.setTime( System.currentTimeMillis() );
 			textArea.append("----------------------- " + dateObj.toString() + " -----------------------" +newline);
+			contentChanged = true;
 		}
 		//
 		//to avoid re-new()-ing with every new call of separator()
 		private java.util.Date dateObj = new java.util.Date();
+
+		public void scrollDownThePane()
+		{
+			textPaneScrlBar.setValue( textPaneScrlBar.getMaximum() );
+		}
 	}
 }
