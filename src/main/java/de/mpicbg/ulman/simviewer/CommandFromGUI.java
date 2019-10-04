@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.simviewer;
 
 import javax.swing.*;
-import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
@@ -58,8 +57,8 @@ public class CommandFromGUI
 		if (showOwnControlPanelWithThisTitle != null)
 		{
 			frame = new JFrame(showOwnControlPanelWithThisTitle);
-			frame.add( createPanel(onClose) );
-			frame.setMinimumSize( new Dimension(600, 400) );
+			frame.add( createPanel(onClose, (action) -> { frame.pack(); }) );
+			frame.pack();
 			showPanel();
 		}
 		else frame = null;
@@ -105,8 +104,10 @@ public class CommandFromGUI
 	//----------------------------------------------------------------------------
 
 	/** creates the panel with switches to adjust the behaviour of the SimViewer,
-	    user has to provide a listener that will be notified when "close" button is pressed */
-	JPanel createPanel(final ActionListener onClose)
+	    user has to provide a listener that will be notified when "close" button is pressed,
+	    or when the dialog is resized (by enabling the advanced EG controls); one
+	    can however provide nulls for the listeners... */
+	JPanel createPanel(final ActionListener onClose, final ActionListener onResize)
 	{
 		//the root JPanel that will be returned
 		final JPanel mainPanel = new JPanel();
@@ -164,7 +165,7 @@ public class CommandFromGUI
 		//content of the SVcontrol:
 		//'q'
 		JButton btn = new JButton("Close the SimViewer");
-		btn.addActionListener( onClose );
+		if (onClose != null) btn.addActionListener( onClose );
 		SVupperButtonsGrid.add(btn);
 
 		//'o'
@@ -272,7 +273,11 @@ public class CommandFromGUI
 		//show EGcontrol
 		JCheckBox cbx = new JCheckBox("Advanced controls panel");
 		cbx.setSelected( EGcontrol.isVisible() );
-		cbx.addActionListener( (action) -> { EGcontrol.setVisible( !EGcontrol.isVisible() ); } );
+		cbx.addActionListener( (action) -> {
+				EGcontrol.setVisible( !EGcontrol.isVisible() );
+				//notify the listener only after the resize is done
+				if (onResize != null) onResize.actionPerformed(action);
+			} );
 		SVbottomButtonsGrid.add(cbx);
 
 		//content of the EGcontrol:
