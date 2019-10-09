@@ -62,9 +62,20 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		materials = new Palette();
 		materials.setMaterialsAlike(sampleMat);
+
+		scene.addChild( scenePoints );
+		scene.addChild( sceneLines );
+		scene.addChild( sceneVectorsS );
+		scene.addChild( sceneVectorsH );
 	}
 	//----------------------------------------------------------------------------
 
+
+	/** a gathering nodes, to have some hiearchy in the sciview's inspector */
+	private final Node scenePoints   = new Node("Points");
+	private final Node sceneLines    = new Node("Lines");
+	private final Node sceneVectorsS = new Node("Vectors - shafts");
+	private final Node sceneVectorsH = new Node("Vectors - arrow heads");
 
 	/** this is designed (yet only) for SINGLE-THREAD application! */
 	public
@@ -81,7 +92,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				scenePoints.removeChild(n.node);
 				pointNodes.remove(ID);
 			}
 			return;
@@ -96,7 +107,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 			n.node.setScale(n.radius);
 
 			pointNodes.put(ID,n);
-			this.addChild(n.node);
+			this.addChild(n.node,'p');
 			showOrHideMe(ID,n.node,spheresShown);
 		}
 
@@ -124,7 +135,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
+				sceneLines.removeChild(n.node);
 				lineNodes.remove(ID);
 			}
 			return;
@@ -139,7 +150,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 			n.node.setScale(n.auxScale);
 
 			lineNodes.put(ID,n);
-			this.addChild(n.node);
+			this.addChild(n.node,'l');
 			showOrHideMe(ID,n.node,linesShown);
 		}
 
@@ -170,8 +181,8 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				scene.removeChild(n.node);
-				scene.removeChild(n.nodeHead);
+				sceneVectorsS.removeChild(n.node);
+				sceneVectorsH.removeChild(n.nodeHead);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -191,8 +202,8 @@ public class DisplaySceneNoInstancing extends DisplayScene
 			n.nodeHead.setScale(n.auxScale);
 
 			vectorNodes.put(ID,n);
-			this.addChild(n.node);
-			this.addChild(n.nodeHead);
+			this.addChild(n.node,'s');
+			this.addChild(n.nodeHead,'h');
 			showOrHideMeForVectorSH(ID);
 		}
 
@@ -226,7 +237,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(p.node);
+				scenePoints.removeChild(p.node);
 				i.remove();
 			}
 		}
@@ -238,7 +249,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 			if (l.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(l.node);
+				sceneLines.removeChild(l.node);
 				i.remove();
 			}
 		}
@@ -250,8 +261,8 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
-				scene.removeChild(v.node);
-				scene.removeChild(v.nodeHead);
+				sceneVectorsS.removeChild(v.node);
+				sceneVectorsH.removeChild(v.nodeHead);
 				i.remove();
 			}
 		}
@@ -266,8 +277,9 @@ public class DisplaySceneNoInstancing extends DisplayScene
 	private boolean updateNodesImmediately = true;
 
 	/** buffer of nodes to be added to the scene (ideally) at the same time */
-	private final Node[] nodesYetToBeAdded    = new Node[10240]; //40 kB of RAM
-	private int          nodesYetToBeAddedCnt = 0;
+	private final char[] nodesYetToBeAddedWhere = new char[10240]; //10 kB of RAM
+	private final Node[] nodesYetToBeAdded      = new Node[10240]; //40 kB of RAM
+	private int          nodesYetToBeAddedCnt   = 0;
 
 	/** buffer of nodes to have their 'needsUpdate' flag set (ideally) at the same time */
 	private final Node[] nodesYetToBeUpdated    = new Node[10240]; //40 kB of RAM
@@ -302,7 +314,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 	void processNodesYetToBeSmth()
 	{
 		for (int i=0; i < nodesYetToBeAddedCnt; ++i)
-			scene.addChild( nodesYetToBeAdded[i] );
+			addSceneChild( nodesYetToBeAdded[i], nodesYetToBeAddedWhere[i] );
 		nodesYetToBeAddedCnt = 0;
 
 		for (int i=0; i < nodesYetToBeUpdatedCnt; ++i)
@@ -314,11 +326,12 @@ public class DisplaySceneNoInstancing extends DisplayScene
 	    process mode), or registers into the 'nodesYetToBeAdded' buffer (when in the batch
 	    process mode) */
 	private
-	void addChild(final Node node)
+	void addChild(final Node node, final char underWhichGatheringNode)
 	{
-		if (updateNodesImmediately) scene.addChild(node);
+		if (updateNodesImmediately) addSceneChild(node, underWhichGatheringNode);
 		else
 		{
+			nodesYetToBeAddedWhere[nodesYetToBeAddedCnt] = underWhichGatheringNode;
 			nodesYetToBeAdded[nodesYetToBeAddedCnt++] = node;
 
 			//overrun protection
@@ -341,6 +354,38 @@ public class DisplaySceneNoInstancing extends DisplayScene
 			//overrun protection
 			if (nodesYetToBeUpdatedCnt == nodesYetToBeUpdated.length)
 				processNodesYetToBeSmth();
+		}
+	}
+
+	private
+	void addSceneChild(final Node node, final char underWhichGatheringNode)
+	{
+		switch (underWhichGatheringNode)
+		{
+		case 'p':
+		case 'P':
+			scenePoints.addChild(node);
+			break;
+		case 'l':
+		case 'L':
+			sceneLines.addChild(node);
+			break;
+		case 'f': //"force"
+		case 'F':
+		case 'v': //"vector"
+		case 'V':
+		case 's': //"shaft"
+		case 'S':
+			sceneVectorsS.addChild(node);
+			break;
+		case 'a': //"arrow head"
+		case 'A':
+		case 'h': //"arrow head"
+		case 'H':
+			sceneVectorsH.addChild(node);
+			break;
+		default:
+			scene.addChild(node);
 		}
 	}
 }
