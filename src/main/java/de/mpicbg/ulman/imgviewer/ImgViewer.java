@@ -31,13 +31,14 @@ package de.mpicbg.ulman.imgviewer;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
+import de.mpicbg.ulman.simviewer.CommandFromGUI;
 
 import org.scijava.command.Command; //plugin itself
 import org.scijava.command.CommandService;
+import org.scijava.display.DisplayService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import static org.scijava.ItemIO.*;
 
 import net.imagej.axis.Axes;        //image container - showing
 import net.imagej.axis.AxisType;
@@ -45,6 +46,7 @@ import net.imagej.ImgPlus;
 import net.imagej.Dataset;
 import net.imagej.DefaultDataset;
 
+import net.imglib2.Interval;
 import net.imglib2.img.Img;         //image container - updating
 import net.imglib2.img.planar.PlanarImgs;
 import net.imglib2.view.Views;
@@ -83,20 +85,8 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	           choices = {"float","16 bit"})
 	private String pixelTypeStr = "float";
 
-	@Parameter(label = "Width of the displayed images (X):", min="1")
-	private int xSize = 200;
-
-	@Parameter(label = "Height of the displayed images (Y):", min="1")
-	private int ySize = 200;
-
-	@Parameter(label = "Depth of the displayed images (Z):", min="1")
-	private int zSize = 100;
-
 	@Parameter(label = "How many images to keep (T):", min="1")
-	private int tSize = 10;
-
-	@Parameter(type = OUTPUT)
-	public Dataset d;
+	private long tSize = 10;
 
 	@Parameter
 	private LogService log;
@@ -104,24 +94,21 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	@Parameter
 	private CommandService cs;
 
-	private ImgPlus<T> img;   //to be yet instantiated in this.run()
-	private Thread imgFeeder; //to be yet instantiated in this.run()
+	@Parameter
+	private DisplayService ds;
+
+	//these will be instantiated later:
+	public Dataset d = null;     //in createContainerImage(), wrapping around the img
+	public ImgPlus<T> img;       //in createContainerImage(), the container image itself
+	private Thread imgFeeder;    //in run()
 
 
 	@Override
 	public void run()
 	{
-		//create a "voxel container" image
-		final Img<T> i = pixelTypeStr.startsWith("fl")
-			? (Img)PlanarImgs.floats(        xSize, ySize, zSize, tSize)
-			: (Img)PlanarImgs.unsignedShorts(xSize, ySize, zSize, tSize);
-		img = new ImgPlus<>( i, windowTitle, new AxisType[] {Axes.X, Axes.Y, Axes.Z, Axes.TIME} );
-
-		//create and associate the container with a soon-to-be-displayed Dataset
-		d = new DefaultDataset(log.getContext(),img);
-
 		//create our own logger (which happens to be an AWT's List)
 		CPlog = new ControlPanelLogger();
+		CPlog.println("Internal network status:");
 
 		//start the image feeder (will use the this.CPlog)
 		keepListening = true;
@@ -141,6 +128,26 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		super.finalize();
 	}
 
+
+	void createContainerImage(final Interval spatialDimension)
+	{
+		if (spatialDimension.numDimensions() != 3)
+			throw new RuntimeException("Cannot work with images that are not 3-dimensional.");
+
+		final long xSize = spatialDimension.max(0) - spatialDimension.min(0) + 1;
+		final long ySize = spatialDimension.max(1) - spatialDimension.min(1) + 1;
+		final long zSize = spatialDimension.max(2) - spatialDimension.min(2) + 1;
+
+		//create a "voxel container" image
+		final Img<T> i = pixelTypeStr.startsWith("fl")
+			? (Img)PlanarImgs.floats(        xSize, ySize, zSize, tSize)
+			: (Img)PlanarImgs.unsignedShorts(xSize, ySize, zSize, tSize);
+		img = new ImgPlus<>( i, windowTitle, new AxisType[] {Axes.X, Axes.Y, Axes.Z, Axes.TIME} );
+
+		//create, display and associate the container with a soon-to-be-displayed Dataset
+		d = new DefaultDataset(log.getContext(),img);
+		ds.createDisplay(d);
+	}
 
 	private <NT extends RealType<NT>>
 	void insertNextImage(final Img<NT> newImg)
@@ -205,6 +212,9 @@ public class ImgViewer<T extends RealType<T>> implements Command
 					final ImgPlus<?> i = !waitBeforeListen ? Receiver.receiveImage() : null;
 					if (i != null)
 					{
+						//first image received? create the container image first
+						if (d == null) createContainerImage(i);
+
 						//got some, insert it
 						log.info("ImgViewer: added a new image, #" + ++addedImgCnt);
 						insertNextImage( (Img)i );
@@ -248,6 +258,15 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	private JFrame frame = null;
 	private ControlPanelLogger CPlog = null;
 
+	class ControlPanelLogger extends CommandFromGUI.ControlPanelLogger implements ProgressCallback
+	{
+		@Override
+		public void info(String msg) { println(msg); }
+		@Override
+		public void setProgress(float howFar) {}
+	}
+
+
 	private
 	void connectControlPanel(final Thread worker)
 	{
@@ -256,37 +275,18 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		final ActionListener actionStop    = new ThreadStopper(worker);
 		final ActionListener actionRestart = new PluginRestarter(actionStop);
 
-		final List txt = CPlog.getList();
-		final Button btnStop = new Button("Click here: Stop receiving images");
-		final Button btnRest = new Button("Click here: Restart in a new instance");
+		final Button btnStop = new Button("Stop receiving images");
+		final Button btnRest = new Button("Restart in a new instance");
+
 		btnStop.addActionListener( actionStop );
 		btnRest.addActionListener( actionRestart );
 
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
-		frame.add(txt);
+		frame.add(CPlog.textPane);
 		frame.add(btnStop);
 		frame.add(btnRest);
-		frame.setMinimumSize(new Dimension(300, 500));
+		frame.pack();
 		frame.setVisible(true);
-	}
-
-
-	class ControlPanelLogger implements ProgressCallback
-	{
-		final List log;
-
-		ControlPanelLogger()
-		{
-			log = new List(20);
-			log.add("Internal network status:");
-		}
-
-		List getList() { return log; }
-
-		@Override
-		public void info(String msg) { log.add(msg); } //TODO: perhaps start trimming the log if too log
-		@Override
-		public void setProgress(float howFar) {}
 	}
 
 
@@ -329,9 +329,6 @@ public class ImgViewer<T extends RealType<T>> implements Command
 			newArgs.put("port",         port);
 			newArgs.put("windowTitle",  windowTitle.concat("#"));
 			newArgs.put("pixelTypeStr", pixelTypeStr);
-			newArgs.put("xSize",        xSize);
-			newArgs.put("ySize",        ySize);
-			newArgs.put("zSize",        zSize);
 			newArgs.put("tSize",        tSize);
 			cs.run(ImgViewer.class, true, newArgs);
 		}
