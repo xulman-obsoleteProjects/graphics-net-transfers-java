@@ -60,6 +60,10 @@ public class VectorSH extends Vector
 	public final Node nodeHead;
 
 	// ------- derived (aux) attributes -------
+	/** similar to the idea behind super.auxScale, we host this extra
+	    memory to adjust separately the scaling of the vector's head */
+	public final GLVector auxScaleHead = new GLVector(1.f,3);
+
 	/** this attribute is a function of vector:
 	    it defines the position/placement of the head of the vector */
 	public final GLVector auxHeadBase = new GLVector(0.f,3);
@@ -86,6 +90,16 @@ public class VectorSH extends Vector
 	public void applyScale(final float scale, final float headPosRatio)
 	{
 		super.applyScale(scale);
+
+		//how to scale the head?
+		// - longitudially/axially the same as the vector's shaft
+		auxScaleHead.set(1, auxScale.y());
+		//
+		// - laterally don't scale (that is keep fixed absolute diameter)
+		//   unless the head's length will be much shorter than the head's width
+		//   in which case we start down-scaling proportionally
+		auxScaleHead.set(0, Math.min(auxScaleHead.y(), 1f) );
+		auxScaleHead.set(2, auxScaleHead.x() );
 
 		auxHeadBase.set(0, base.x());
 		auxHeadBase.set(1, base.y());

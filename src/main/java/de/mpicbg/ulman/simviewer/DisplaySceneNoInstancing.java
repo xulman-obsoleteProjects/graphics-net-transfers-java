@@ -204,7 +204,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 			n.nodeHead.setName( name );
 			n.nodeHead.setPosition(n.auxHeadBase);
-			n.nodeHead.setScale(n.auxScale);
+			n.nodeHead.setScale(n.auxScaleHead);
 
 			vectorNodes.put(ID,n);
 			this.addChild(n.node,'s');

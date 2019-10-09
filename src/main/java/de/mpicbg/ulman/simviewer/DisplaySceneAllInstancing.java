@@ -286,7 +286,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			ns.setPosition(n.base);
 
 			nh.setMaterial(refVectorNode_Head.getMaterial());
-			nh.setScale(n.auxScale);
+			nh.setScale(n.auxScaleHead);
 			nh.setPosition(n.auxHeadBase);
 
 			//spawn another instances

@@ -133,8 +133,8 @@ public class DisplayScene
 		return new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
 	}
 
-	final float vec_headLengthRatio = 0.2f;         //relative scale (0,1)
-	final float vec_headToShaftWidthRatio = 10.0f;  //absolute value/width
+	final float vec_headLengthRatio = 0.2f;        //relative scale (0,1)
+	final float vec_headToShaftWidthRatio = 2.0f;  //absolute value/width
 	//----------------------------------------------------------------------------
 
 
@@ -813,8 +813,8 @@ public class DisplayScene
 		//...and rescale all vectors presently existing in the system
 		vectorNodes.values().forEach( n -> {
 			n.applyScale(vectorsStretch,vec_headLengthRatio);
-			n.node.updateWorld(false,false);
-			n.nodeHead.updateWorld(false,false);
+			n.node.updateWorld(false,true);
+			n.nodeHead.updateWorld(false,true);
 		} );
 	 }
 	}
