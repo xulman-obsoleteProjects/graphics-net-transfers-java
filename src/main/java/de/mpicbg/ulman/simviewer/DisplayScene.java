@@ -1063,6 +1063,13 @@ public class DisplayScene
 		v.nodeHead.setVisible( showOrHideMe(ID,v.node,vectorsShown) );
 		//NB: sets the same visibility to both nodes, see few lines above
 	}
+
+	String createNodeName(final int ID)
+	{
+		if ((ID & MASK_CELLID) == 0) return ("Global debug "+(ID & MASK_ELEM));
+		if ((ID & MASK_DEBUG) > 0)   return ((ID >> 17)+" cell's debug "+(ID & MASK_ELEM));
+		return ((ID >> 17)+" cell's "+(ID & MASK_ELEM));
+	}
 	//----------------------------------------------------------------------------
 
 

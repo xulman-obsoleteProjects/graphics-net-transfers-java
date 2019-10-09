@@ -103,6 +103,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		{
 			//new point: adding
 			n = new Point( factoryForPoints() );
+			n.node.setName( createNodeName(ID) );
 			n.node.setPosition(n.centre);
 			n.node.setScale(n.radius);
 
@@ -146,6 +147,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		{
 			//new line: adding
 			n = new Line( factoryForLines() );
+			n.node.setName( createNodeName(ID) );
 			n.node.setPosition(n.base);
 			n.node.setScale(n.auxScale);
 
@@ -195,9 +197,12 @@ public class DisplaySceneNoInstancing extends DisplayScene
 			n = new VectorSH( factoryForVectorShafts(), factoryForVectorHeads() );
 
 			//define the vector
+			final String name = createNodeName(ID);
+			n.node.setName( name );
 			n.node.setPosition(n.base);
 			n.node.setScale(n.auxScale);
 
+			n.nodeHead.setName( name );
 			n.nodeHead.setPosition(n.auxHeadBase);
 			n.nodeHead.setScale(n.auxScale);
 
