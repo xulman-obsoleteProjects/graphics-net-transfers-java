@@ -121,6 +121,7 @@ public class CommandFromGUI
 		EGcontrol.setVisible(false);
 		//
 		logger = new ControlPanelLogger();
+		logger.println("Reported status:");
 		Logger.add( logger.textPane, BorderLayout.CENTER );
 		//
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -588,14 +589,14 @@ public class CommandFromGUI
 
 	/** implements functionality of the System.out.println() to print into the List panel,
 	    everything else is routed to the standard current System.out */
-	class ControlPanelLogger extends PrintStream
+	public static class ControlPanelLogger extends PrintStream
 	{
 		//content...
 		static private final String newline = "\n";
 		private final JTextArea textArea;
 
 		//form...
-		final JScrollPane        textPane;
+		public final JScrollPane textPane;
 		private final Thread     textPaneAutoScroller;
 		private final JScrollBar textPaneScrlBar;
 
@@ -603,7 +604,7 @@ public class CommandFromGUI
 		private boolean contentChanged = false;
 		private boolean scrollingEnabled = true;
 
-		ControlPanelLogger()
+		public ControlPanelLogger()
 		{
 			super(System.out);
 
@@ -611,7 +612,6 @@ public class CommandFromGUI
 			textArea = new JTextArea(10,48);
 			textArea.setEditable(false);
 			textArea.addMouseListener(mouseReader);
-			textArea.append("Reported status:" +newline);
 
 			//place it into a scrollable Container
 			textPane = new JScrollPane( textArea,
