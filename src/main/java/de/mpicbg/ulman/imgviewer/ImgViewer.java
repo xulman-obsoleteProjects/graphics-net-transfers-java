@@ -31,6 +31,7 @@ package de.mpicbg.ulman.imgviewer;
 
 import de.mpicbg.ulman.imgtransfer.ImgTransfer;
 import de.mpicbg.ulman.imgtransfer.ProgressCallback;
+import de.mpicbg.ulman.simviewer.CommandFromGUI;
 
 import org.scijava.command.Command; //plugin itself
 import org.scijava.command.CommandService;
@@ -107,6 +108,7 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	{
 		//create our own logger (which happens to be an AWT's List)
 		CPlog = new ControlPanelLogger();
+		CPlog.println("Internal network status:");
 
 		//start the image feeder (will use the this.CPlog)
 		keepListening = true;
@@ -256,6 +258,15 @@ public class ImgViewer<T extends RealType<T>> implements Command
 	private JFrame frame = null;
 	private ControlPanelLogger CPlog = null;
 
+	class ControlPanelLogger extends CommandFromGUI.ControlPanelLogger implements ProgressCallback
+	{
+		@Override
+		public void info(String msg) { println(msg); }
+		@Override
+		public void setProgress(float howFar) {}
+	}
+
+
 	private
 	void connectControlPanel(final Thread worker)
 	{
@@ -264,37 +275,18 @@ public class ImgViewer<T extends RealType<T>> implements Command
 		final ActionListener actionStop    = new ThreadStopper(worker);
 		final ActionListener actionRestart = new PluginRestarter(actionStop);
 
-		final List txt = CPlog.getList();
-		final Button btnStop = new Button("Click here: Stop receiving images");
-		final Button btnRest = new Button("Click here: Restart in a new instance");
+		final Button btnStop = new Button("Stop receiving images");
+		final Button btnRest = new Button("Restart in a new instance");
+
 		btnStop.addActionListener( actionStop );
 		btnRest.addActionListener( actionRestart );
 
 		frame.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
-		frame.add(txt);
+		frame.add(CPlog.textPane);
 		frame.add(btnStop);
 		frame.add(btnRest);
-		frame.setMinimumSize(new Dimension(300, 500));
+		frame.pack();
 		frame.setVisible(true);
-	}
-
-
-	class ControlPanelLogger implements ProgressCallback
-	{
-		final List log;
-
-		ControlPanelLogger()
-		{
-			log = new List(20);
-			log.add("Internal network status:");
-		}
-
-		List getList() { return log; }
-
-		@Override
-		public void info(String msg) { log.add(msg); } //TODO: perhaps start trimming the log if too log
-		@Override
-		public void setProgress(float howFar) {}
 	}
 
 
