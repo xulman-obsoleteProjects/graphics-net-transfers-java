@@ -434,7 +434,8 @@ public class CommandFromGUI
 	final String btnLightRampsLabel_None  = "Use both light ramps";
 	final String btnLightRampsLabel_Both  = "Use only front light ramp";
 	final String btnLightRampsLabel_Front = "Use only rear light ramp";
-	final String btnLightRampsLabel_Rear  = "Use no light ramp";
+	final String btnLightRampsLabel_Rear  = "Use only circular lights";
+	final String btnLightRampsLabel_Circle = "Use no lights";
 	//
 	private void btnLightRampsSetLabel()
 	{
@@ -451,6 +452,9 @@ public class CommandFromGUI
 			break;
 		case REAR:
 			btnLightRamps.setText(btnLightRampsLabel_Rear);
+			break;
+		case CIRCLE:
+			btnLightRamps.setText(btnLightRampsLabel_Circle);
 			break;
 		}
 

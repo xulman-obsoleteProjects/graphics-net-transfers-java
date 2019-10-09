@@ -498,7 +498,7 @@ public class DisplayScene
 
 
 	//the state flags of the lights
-	public enum fixedLightsState { NONE, BOTH, FRONT, REAR };
+	public enum fixedLightsState { NONE, BOTH, FRONT, REAR, CIRCLE };
 
 	private PointLight[][] fixedLights = null;
 	private fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
@@ -524,11 +524,17 @@ public class DisplayScene
 		final float zNearCentre = (sceneOffset[2] + 1.5f*sceneSize[2]) *DsFactor;
 		final float zFarCentre  = (sceneOffset[2] - 0.5f*sceneSize[2]) *DsFactor;
 
+		//one light circle around the scene
+		//----------------------------------
+		final int noOfCircleLights = 12;
+		final float yCentre = (sceneOffset[1] + 0.50f*sceneSize[1]) *DsFactor;
+		final float zCentre = (sceneOffset[2] + 0.50f*sceneSize[2]) *DsFactor;
+
 		//tuned such that, given current light intensity and fading, the rear cells are dark yet visible
 		final float radius = 1.1f*sceneSize[1] *DsFactor;
 
 		//create the lights, one for each upper corner of the scene
-		fixedLights = new PointLight[2][6];
+		fixedLights = new PointLight[][] { new PointLight[6], new PointLight[6], new PointLight[noOfCircleLights] };
 		(fixedLights[0][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zNear));
 		(fixedLights[0][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zNear));
 		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNearCentre));
@@ -556,6 +562,16 @@ public class DisplayScene
 		fixedLights[1][3].setName("PointLight Ramp2: x-centre, y-top, z-far");
 		fixedLights[1][4].setName("PointLight Ramp2: x-right, y-bottom, z-far");
 		fixedLights[1][5].setName("PointLight Ramp2: x-right, y-top, z-far");
+
+		for (int i=0; i < noOfCircleLights; ++i)
+		{
+			final double ang = 2.0 * Math.PI * i / noOfCircleLights;
+			(fixedLights[2][i] = new PointLight(radius)).setPosition(
+				new GLVector( xCentre + (float)(Math.cos(ang) * 0.8 * sceneSize[0] * DsFactor),
+				              yCentre,
+				              zCentre + (float)(Math.sin(ang) * 0.8 * sceneSize[2] * DsFactor) ));
+			fixedLights[2][i].setName("PointLight Circle at "+(360*i/noOfCircleLights)+" deg");
+		}
 
 		//common settings of all lights
 		final GLVector lightsColor = new GLVector(1.0f, 1.0f, 1.0f);
@@ -625,21 +641,31 @@ public class DisplayScene
 		case NONE:
 			for (PointLight l : fixedLights[0]) l.setVisible(true);
 			for (PointLight l : fixedLights[1]) l.setVisible(true);
+			for (PointLight l : fixedLights[2]) l.setVisible(false);
 			fixedLightsChoosen = fixedLightsState.BOTH;
 			break;
 		case BOTH:
 			for (PointLight l : fixedLights[0]) l.setVisible(true);
 			for (PointLight l : fixedLights[1]) l.setVisible(false);
+			for (PointLight l : fixedLights[2]) l.setVisible(false);
 			fixedLightsChoosen = fixedLightsState.FRONT;
 			break;
 		case FRONT:
 			for (PointLight l : fixedLights[0]) l.setVisible(false);
 			for (PointLight l : fixedLights[1]) l.setVisible(true);
+			for (PointLight l : fixedLights[2]) l.setVisible(false);
 			fixedLightsChoosen = fixedLightsState.REAR;
 			break;
 		case REAR:
 			for (PointLight l : fixedLights[0]) l.setVisible(false);
 			for (PointLight l : fixedLights[1]) l.setVisible(false);
+			for (PointLight l : fixedLights[2]) l.setVisible(true);
+			fixedLightsChoosen = fixedLightsState.CIRCLE;
+			break;
+		case CIRCLE:
+			for (PointLight l : fixedLights[0]) l.setVisible(false);
+			for (PointLight l : fixedLights[1]) l.setVisible(false);
+			for (PointLight l : fixedLights[2]) l.setVisible(false);
 			fixedLightsChoosen = fixedLightsState.NONE;
 			break;
 		}
