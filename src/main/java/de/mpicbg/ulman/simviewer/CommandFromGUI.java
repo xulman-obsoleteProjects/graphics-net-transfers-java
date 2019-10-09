@@ -196,7 +196,6 @@ public class CommandFromGUI
 		SVupperButtonsGrid.add(btn);
 
 		//overAll scale
-		spinner.setValue( scene.DsFactor );
 		spinner.addChangeListener( (action) -> { scene.RescaleScene(spinner.getNumber().floatValue()); } );
 		//
 		final JLabel sLabel = new JLabel("Scale the whole scene: ");
