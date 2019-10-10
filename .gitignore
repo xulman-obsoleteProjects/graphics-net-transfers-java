@@ -7,8 +7,7 @@ doc/Mito*
 
 # VIM editor #
 .*.swp
-.*.un~
-.*~
+*~
 
 # Compiled Java class files #
 *.class
