@@ -60,7 +60,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		sampleMat.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
 		sampleMat.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
 
-		materials = new Palette();
+		materials = new Palette(8);
 		materials.setMaterialsAlike(sampleMat);
 
 		scene.addChild( scenePoints );
