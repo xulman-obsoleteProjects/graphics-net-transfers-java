@@ -785,8 +785,7 @@ public class DisplayScene
 	{
 	 synchronized (lockOnChangingSceneContent)
 	 {
-		tickCounter = Integer.MAX_VALUE;
-		garbageCollect(-1);
+		garbageCollect(Integer.MIN_VALUE);
 	 }
 	}
 
@@ -796,7 +795,7 @@ public class DisplayScene
 		garbageCollect(0);
 	}
 
-	/** remove all objects that were last touched before tickCounter-tolerance */
+	/** remove all objects that were last touched before this.tickCounter-tolerance */
 	public
 	void garbageCollect(int tolerance)
 	{
