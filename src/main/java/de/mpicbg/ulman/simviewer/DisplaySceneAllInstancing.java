@@ -398,7 +398,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		//now update the point with the current data
 		n.update(p);
 		n.lastSeenTick = tickCounter;
-		n.node.updateWorld(false,false);
+		n.node.setNeedsUpdate(true);
 	 }
 	}
 
@@ -452,7 +452,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		//finally, set the new absolute orientation
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
-		//NB: this triggers n.node.updateWorld() automatically //TODO!
+		n.node.setNeedsUpdate(true);
 	 }
 	}
 
@@ -517,7 +517,8 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
-		//NB: this triggers n.nodes.updateWorld() automatically TODO
+		n.node.setNeedsUpdate(true);
+		n.nodeHead.setNeedsUpdate(true);
 	 }
 	}
 
