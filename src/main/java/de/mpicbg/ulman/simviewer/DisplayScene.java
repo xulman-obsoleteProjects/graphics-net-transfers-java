@@ -41,6 +41,7 @@ import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
 import de.mpicbg.ulman.simviewer.util.Palette;
+import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -289,12 +290,9 @@ public class DisplayScene
 		CreateFixedLightsRamp();
 		while (ToggleFixedLights() != backupLightsState) ;
 
-		boolean backupState = borderShown;
-		RemoveDisplaySceneBorder();
-		CreateDisplaySceneBorder();
-		if (backupState) ToggleDisplaySceneBorder();
+		borderData.shapeForThisScene(sceneOffset,sceneSize);
 
-		backupState = axesShown;
+		boolean backupState = axesShown;
 		RemoveDisplayAxes();
 		CreateDisplayAxes();
 		if (backupState) ToggleDisplayAxes();
@@ -390,8 +388,8 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	private Node[]   borderData = null;
-	private boolean borderShown = false;
+	protected SceneBorderData borderData = null;
+	protected boolean borderShown = false;
 
 	public
 	void CreateDisplaySceneBorder()
@@ -399,76 +397,27 @@ public class DisplayScene
 		//remove any old border, if it exists at all...
 		RemoveDisplaySceneBorder();
 
-		final float barRadius = 0.7f;
+		borderData = new SceneBorderData();
+		borderData.shapeForThisScene(sceneOffset,sceneSize);
+		borderData.setMaterial(materials);
 
-		//1 fake node for the SciView + 12 edges of a cube
-		borderData = new Node[13];
-		borderData[0] = new Node("Scene frame");
-		borderData[0].setVisible(false);
-		scene.addChild(borderData[0]);
-
-		//x-axes aligned
-		for (int i=1; i < 5; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[0],4);
-			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-			borderData[i].setMaterial(materials.getMaterial(3));
-			borderData[i].setName("left-right bar (x axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		final GLVector offset = new GLVector(sceneOffset[0],sceneOffset[1],sceneOffset[2]);
-		final GLVector dx = new GLVector(sceneSize[0],0.f,0.f);
-		final GLVector dy = new GLVector(0.f,sceneSize[1],0.f);
-		final GLVector dz = new GLVector(0.f,0.f,sceneSize[2]);
-
-		borderData[1].setPosition(offset);
-		borderData[2].setPosition(offset.plus(dy));
-		borderData[4].setPosition(offset.plus(dy).plus(dz));
-		borderData[3].setPosition(offset.plus(dz));
-
-		//y-axes aligned
-		for (int i=5; i < 9; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[1],4);
-			borderData[i].setMaterial(materials.getMaterial(1));
-			borderData[i].setName("bottom-up bar (y axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		borderData[5].setPosition(offset);
-		borderData[6].setPosition(offset.plus(dx));
-		borderData[7].setPosition(offset.plus(dx).plus(dz));
-		borderData[8].setPosition(offset.plus(dz));
-
-		//z-axes aligned
-		for (int i=9; i < 13; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[2],4);
-			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
-			borderData[i].setMaterial(materials.getMaterial(1));
-			borderData[i].setName("front-rear bar (z axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		borderData[9].setPosition(offset);
-		borderData[10].setPosition(offset.plus(dx));
-		borderData[11].setPosition(offset.plus(dx).plus(dy));
-		borderData[12].setPosition(offset.plus(dy));
-
-		borderShown = false;
+		borderData.parentNode = new Node("Scene border");
+		borderData.becomeChildOf(borderData.parentNode);
+		scene.addChild(borderData.parentNode);
+		borderData.parentNode.setVisible(borderShown);
+		//NB: set visibility as the last so that it can propagate to
+		//all children (and make them synchronized w.r.t. visibility)
 	}
 
 	public
 	void RemoveDisplaySceneBorder()
 	{
+		borderShown = false;
 		if (borderData == null) return;
-
-		for (int i=1; i < borderData.length; ++i) borderData[0].removeChild(borderData[i]);
-		scene.removeChild(borderData[0]);
+		if (borderData.parentNode != null)
+			scene.removeChild(borderData.parentNode);
 
 		borderData = null;
-		borderShown = false;
 	}
 
 	public
@@ -485,8 +434,7 @@ public class DisplayScene
 		borderShown ^= true;
 
 		//adjust the visibility
-		for (Node n : borderData)
-			n.setVisible(borderShown);
+		borderData.parentNode.setVisible(borderShown);
 
 		return borderShown;
 	}

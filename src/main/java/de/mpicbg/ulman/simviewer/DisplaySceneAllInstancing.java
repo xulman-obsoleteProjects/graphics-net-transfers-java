@@ -43,6 +43,7 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
+import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -153,6 +154,40 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			mastersGroupNodes[i].addChild(cMain);
 			cMain.addChild(cAux);
 		}
+	}
+
+	public
+	void CreateDisplaySceneBorder()
+	{
+		//remove any old border, if it exists at all...
+		RemoveDisplaySceneBorder();
+
+		borderData = new SceneBorderData();
+		borderData.shapeForThisScene(sceneOffset,sceneSize);
+		borderData.setMaterial(refMaterials[CATEGORY0_LINES]);
+
+		borderData.parentNode = defineLineMaster();
+		borderData.parentNode.setName("Scene frame");
+		borderData.parentNode.setVisible(borderShown);
+		borderData.setParentTo(borderData.parentNode);
+
+		int i=0;
+		for (Node b : borderData.borderData())
+		{
+			b.getInstancedProperties().put("ModelMatrix", b::getWorld);
+			if (fullInstancing)
+			{
+				//NB: follows the pattern of SceneBorderData.setMaterial(palette)
+				if (i < 4)
+					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderBlueColor);
+				else
+					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderRedColor);
+				++i;
+			}
+			borderData.parentNode.getInstances().add(b);
+		}
+
+		scene.addChild(borderData.parentNode);
 	}
 
 	private Sphere defineSphereMaster()
