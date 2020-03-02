@@ -162,6 +162,11 @@ public class DisplayScene
 	public static final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
+	void requestWorldUpdate(boolean force)
+	{
+		//intentionally empty
+	}
+	//----------------------------------------------------------------------------
 
 	public
 	boolean IsFrontFacesCullingEnabled()
@@ -184,6 +189,7 @@ public class DisplayScene
 		RepositionFixedLightsRamp(newDsFactor);
 		scene.setScale(new GLVector(newDsFactor,3));
 		DsFactor = newDsFactor;
+		requestWorldUpdate(false);
 	}
 
 	/** resets the scene offset and size to its current content plus 10 % relative margin,

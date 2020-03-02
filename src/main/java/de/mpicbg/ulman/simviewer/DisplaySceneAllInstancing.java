@@ -227,6 +227,18 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		scene.addChild(borderData.parentNode);
 	}
+	//----------------------------------------------------------------------------
+
+	void requestWorldUpdate(boolean force)
+	{
+		scene.updateWorld(true,force);
+		if (axesData != null) axesData.axesData().forEach( (a) -> a.setNeedsUpdate(true) );
+		if (borderData != null) borderData.borderData().forEach( (b) -> b.setNeedsUpdate(true) );
+		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) );
+		lineNodes.values().forEach( (l) -> l.node.setNeedsUpdate(true) );
+		vectorNodes.values().forEach( (v) -> { v.node.setNeedsUpdate(true); v.nodeHead.setNeedsUpdate(true); } );
+	}
+	//----------------------------------------------------------------------------
 
 	private Sphere defineSphereMaster()
 	{
