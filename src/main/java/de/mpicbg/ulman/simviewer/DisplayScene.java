@@ -157,7 +157,7 @@ public class DisplayScene
 	Palette materials;
 
 	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
-	final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
+	public static final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
 
@@ -1130,7 +1130,7 @@ public class DisplayScene
 	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
 	    the axis of rotational symmetry in a cylinder) given with _normalized_
 	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
-	public
+	public static
 	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
 	{
@@ -1165,7 +1165,7 @@ public class DisplayScene
 
 	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
 	    will be stored into the currentNormalizedOrientVec. */
-	public
+	public static
 	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
 	                  final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
