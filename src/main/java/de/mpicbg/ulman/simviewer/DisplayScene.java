@@ -136,7 +136,7 @@ public class DisplayScene
 	}
 
 	final float vec_headLengthRatio = 0.2f;        //relative scale (0,1)
-	final float vec_headToShaftWidthRatio = 2.0f;  //absolute value/width
+	final float vec_headToShaftWidthRatio = 3.0f;  //absolute value/width
 	//----------------------------------------------------------------------------
 
 
