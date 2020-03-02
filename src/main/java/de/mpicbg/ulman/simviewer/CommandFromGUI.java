@@ -170,10 +170,11 @@ public class CommandFromGUI
 		SVupperButtonsGrid.add(btn);
 
 		//'o'
-		btn = new JButton("Update and report settings");
+		btn = new JButton("Update and report status");
 		btn.addActionListener( (action) -> {
 				refreshPanelState();
 				scene.reportSettings(logger);
+				frame.setTitle("Controls of "+scene.scene.getName());
 			} );
 		SVupperButtonsGrid.add(btn);
 
