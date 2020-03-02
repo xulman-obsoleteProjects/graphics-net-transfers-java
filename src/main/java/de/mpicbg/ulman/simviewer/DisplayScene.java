@@ -1043,9 +1043,9 @@ public class DisplayScene
 
 	//constants to "read out" respective information
 	@SuppressWarnings("unused")
-	private static final int MASK_ELEM   = ((1 << 16)-1);
-	private static final int MASK_DEBUG  =   1 << 16;
-	private static final int MASK_CELLID = ((1 << 14)-1) << 17;
+	static final int MASK_ELEM   = ((1 << 16)-1);
+	static final int MASK_DEBUG  =   1 << 16;
+	static final int MASK_CELLID = ((1 << 14)-1) << 17;
 
 	/** given the current display preference in 'displayFlag',
 	    the visibility of the object 'n' with ID is adjusted,
