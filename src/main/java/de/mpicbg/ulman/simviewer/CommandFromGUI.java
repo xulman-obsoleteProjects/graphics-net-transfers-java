@@ -170,10 +170,11 @@ public class CommandFromGUI
 		SVupperButtonsGrid.add(btn);
 
 		//'o'
-		btn = new JButton("Update and report settings");
+		btn = new JButton("Update and report status");
 		btn.addActionListener( (action) -> {
 				refreshPanelState();
 				scene.reportSettings(logger);
+				frame.setTitle("Controls of "+scene.scene.getName());
 			} );
 		SVupperButtonsGrid.add(btn);
 
@@ -426,7 +427,7 @@ public class CommandFromGUI
 	final String btnSceneBorderLabel_Enable =  "Enable scene border";
 	final JButton btnSceneBorder = new JButton( btnSceneBorderLabel_Enable );
 
-	final SpinnerNumberModel spinner = new SpinnerNumberModel(1.0, 0.02, 1000.0, 0.1);
+	final SpinnerNumberModel spinner = new SpinnerNumberModel(1.0, 0.02, 1000.0, 0.01);
 
 	final JButton btnLightRamps = new JButton();
 	final JButton btnLightRampsDimmer   = new JButton("Make lights dimmer");

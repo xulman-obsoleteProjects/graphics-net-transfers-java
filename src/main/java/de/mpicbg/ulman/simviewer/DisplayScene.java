@@ -41,6 +41,8 @@ import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
 import de.mpicbg.ulman.simviewer.util.Palette;
+import de.mpicbg.ulman.simviewer.util.SceneAxesData;
+import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -134,7 +136,7 @@ public class DisplayScene
 	}
 
 	final float vec_headLengthRatio = 0.2f;        //relative scale (0,1)
-	final float vec_headToShaftWidthRatio = 2.0f;  //absolute value/width
+	final float vec_headToShaftWidthRatio = 3.0f;  //absolute value/width
 	//----------------------------------------------------------------------------
 
 
@@ -157,9 +159,14 @@ public class DisplayScene
 	Palette materials;
 
 	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
-	final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
+	public static final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
+	void requestWorldUpdate(boolean force)
+	{
+		//intentionally empty
+	}
+	//----------------------------------------------------------------------------
 
 	public
 	boolean IsFrontFacesCullingEnabled()
@@ -182,6 +189,7 @@ public class DisplayScene
 		RepositionFixedLightsRamp(newDsFactor);
 		scene.setScale(new GLVector(newDsFactor,3));
 		DsFactor = newDsFactor;
+		requestWorldUpdate(false);
 	}
 
 	/** resets the scene offset and size to its current content plus 10 % relative margin,
@@ -289,21 +297,14 @@ public class DisplayScene
 		CreateFixedLightsRamp();
 		while (ToggleFixedLights() != backupLightsState) ;
 
-		boolean backupState = borderShown;
-		RemoveDisplaySceneBorder();
-		CreateDisplaySceneBorder();
-		if (backupState) ToggleDisplaySceneBorder();
-
-		backupState = axesShown;
-		RemoveDisplayAxes();
-		CreateDisplayAxes();
-		if (backupState) ToggleDisplayAxes();
+		if (borderData != null) borderData.shapeForThisScene(sceneOffset,sceneSize);
+		if ( axesData  != null)   axesData.shapeForThisScene(sceneOffset,sceneSize);
 	}
 	//----------------------------------------------------------------------------
 
 
-	private Node[]   axesData = null;
-	private boolean axesShown = false;
+	protected SceneAxesData axesData = null;
+	protected boolean axesShown = false;
 
 	public
 	void CreateDisplayAxes()
@@ -311,57 +312,27 @@ public class DisplayScene
 		//remove any old axes, if they exist at all...
 		RemoveDisplayAxes();
 
-		final float barRadius = 1.0f;
-		final float barLength = 30.0f;
+		axesData = new SceneAxesData();
+		axesData.shapeForThisScene(sceneOffset,sceneSize);
+		axesData.setMaterial(materials);
 
-		axesData = new Node[] {
-			new Node("Scene orientation compass"),
-			new Cylinder(barRadius,barLength,4),
-			new Cylinder(barRadius,barLength,4),
-			new Cylinder(barRadius,barLength,4)};
-
-		axesData[0].setVisible(false);
-		scene.addChild(axesData[0]);
-
-		//set material - color
-		//NB: RGB colors ~ XYZ axes
-		axesData[1].setMaterial(materials.getMaterial(1));
-		axesData[2].setMaterial(materials.getMaterial(2));
-		axesData[3].setMaterial(materials.getMaterial(3));
-
-		axesData[1].setName("compass axis: X");
-		axesData[2].setName("compass axis: Y");
-		axesData[3].setName("compass axis: Z");
-
-		//set orientation for x,z axes
-		ReOrientNode(axesData[1],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-		ReOrientNode(axesData[3],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
-
-		//place all axes into the scene centre
-		final GLVector centre = new GLVector(
-			(sceneOffset[0] + 0.5f*sceneSize[0]),
-			(sceneOffset[1] + 0.5f*sceneSize[1]),
-			(sceneOffset[2] + 0.5f*sceneSize[2]));
-
-		for (int i=1; i < 4; ++i)
-		{
-			axesData[i].setPosition(centre);
-			axesData[0].addChild(axesData[i]);
-		}
-
-		axesShown = false;
+		axesData.parentNode = new Node("Scene orientation compass");
+		axesData.becomeChildOf(axesData.parentNode);
+		scene.addChild(axesData.parentNode);
+		axesData.parentNode.setVisible(axesShown);
+		//NB: set visibility as the last so that it can propagate to
+		//all children (and make them synchronized w.r.t. visibility)
 	}
 
 	public
 	void RemoveDisplayAxes()
 	{
+		axesShown = false;
 		if (axesData == null) return;
-
-		for (int i=1; i < axesData.length; ++i) axesData[0].removeChild(axesData[i]);
-		scene.removeChild(axesData[0]);
+		if (axesData.parentNode != null)
+			scene.removeChild(axesData.parentNode);
 
 		axesData = null;
-		axesShown = false;
 	}
 
 	public
@@ -378,8 +349,7 @@ public class DisplayScene
 		axesShown ^= true;
 
 		//adjust the visibility
-		for (Node n : axesData)
-			n.setVisible(axesShown);
+		axesData.parentNode.setVisible(axesShown);
 
 		return axesShown;
 	}
@@ -390,8 +360,8 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	private Node[]   borderData = null;
-	private boolean borderShown = false;
+	protected SceneBorderData borderData = null;
+	protected boolean borderShown = false;
 
 	public
 	void CreateDisplaySceneBorder()
@@ -399,76 +369,27 @@ public class DisplayScene
 		//remove any old border, if it exists at all...
 		RemoveDisplaySceneBorder();
 
-		final float barRadius = 0.7f;
+		borderData = new SceneBorderData();
+		borderData.shapeForThisScene(sceneOffset,sceneSize);
+		borderData.setMaterial(materials);
 
-		//1 fake node for the SciView + 12 edges of a cube
-		borderData = new Node[13];
-		borderData[0] = new Node("Scene frame");
-		borderData[0].setVisible(false);
-		scene.addChild(borderData[0]);
-
-		//x-axes aligned
-		for (int i=1; i < 5; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[0],4);
-			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-			borderData[i].setMaterial(materials.getMaterial(3));
-			borderData[i].setName("left-right bar (x axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		final GLVector offset = new GLVector(sceneOffset[0],sceneOffset[1],sceneOffset[2]);
-		final GLVector dx = new GLVector(sceneSize[0],0.f,0.f);
-		final GLVector dy = new GLVector(0.f,sceneSize[1],0.f);
-		final GLVector dz = new GLVector(0.f,0.f,sceneSize[2]);
-
-		borderData[1].setPosition(offset);
-		borderData[2].setPosition(offset.plus(dy));
-		borderData[4].setPosition(offset.plus(dy).plus(dz));
-		borderData[3].setPosition(offset.plus(dz));
-
-		//y-axes aligned
-		for (int i=5; i < 9; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[1],4);
-			borderData[i].setMaterial(materials.getMaterial(1));
-			borderData[i].setName("bottom-up bar (y axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		borderData[5].setPosition(offset);
-		borderData[6].setPosition(offset.plus(dx));
-		borderData[7].setPosition(offset.plus(dx).plus(dz));
-		borderData[8].setPosition(offset.plus(dz));
-
-		//z-axes aligned
-		for (int i=9; i < 13; ++i)
-		{
-			borderData[i] = new Cylinder(barRadius,sceneSize[2],4);
-			ReOrientNode(borderData[i],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
-			borderData[i].setMaterial(materials.getMaterial(1));
-			borderData[i].setName("front-rear bar (z axis)");
-			borderData[0].addChild( borderData[i] );
-		}
-
-		borderData[9].setPosition(offset);
-		borderData[10].setPosition(offset.plus(dx));
-		borderData[11].setPosition(offset.plus(dx).plus(dy));
-		borderData[12].setPosition(offset.plus(dy));
-
-		borderShown = false;
+		borderData.parentNode = new Node("Scene border frame");
+		borderData.becomeChildOf(borderData.parentNode);
+		scene.addChild(borderData.parentNode);
+		borderData.parentNode.setVisible(borderShown);
+		//NB: set visibility as the last so that it can propagate to
+		//all children (and make them synchronized w.r.t. visibility)
 	}
 
 	public
 	void RemoveDisplaySceneBorder()
 	{
+		borderShown = false;
 		if (borderData == null) return;
-
-		for (int i=1; i < borderData.length; ++i) borderData[0].removeChild(borderData[i]);
-		scene.removeChild(borderData[0]);
+		if (borderData.parentNode != null)
+			scene.removeChild(borderData.parentNode);
 
 		borderData = null;
-		borderShown = false;
 	}
 
 	public
@@ -485,8 +406,7 @@ public class DisplayScene
 		borderShown ^= true;
 
 		//adjust the visibility
-		for (Node n : borderData)
-			n.setVisible(borderShown);
+		borderData.parentNode.setVisible(borderShown);
 
 		return borderShown;
 	}
@@ -785,8 +705,7 @@ public class DisplayScene
 	{
 	 synchronized (lockOnChangingSceneContent)
 	 {
-		tickCounter = Integer.MAX_VALUE;
-		garbageCollect(-1);
+		garbageCollect(Integer.MIN_VALUE);
 	 }
 	}
 
@@ -796,7 +715,7 @@ public class DisplayScene
 		garbageCollect(0);
 	}
 
-	/** remove all objects that were last touched before tickCounter-tolerance */
+	/** remove all objects that were last touched before this.tickCounter-tolerance */
 	public
 	void garbageCollect(int tolerance)
 	{
@@ -1043,9 +962,9 @@ public class DisplayScene
 
 	//constants to "read out" respective information
 	@SuppressWarnings("unused")
-	private static final int MASK_ELEM   = ((1 << 16)-1);
-	private static final int MASK_DEBUG  =   1 << 16;
-	private static final int MASK_CELLID = ((1 << 14)-1) << 17;
+	static final int MASK_ELEM   = ((1 << 16)-1);
+	static final int MASK_DEBUG  =   1 << 16;
+	static final int MASK_CELLID = ((1 << 14)-1) << 17;
 
 	/** given the current display preference in 'displayFlag',
 	    the visibility of the object 'n' with ID is adjusted,
@@ -1131,7 +1050,7 @@ public class DisplayScene
 	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
 	    the axis of rotational symmetry in a cylinder) given with _normalized_
 	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
-	public
+	public static
 	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)
 	{
@@ -1166,7 +1085,7 @@ public class DisplayScene
 
 	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
 	    will be stored into the currentNormalizedOrientVec. */
-	public
+	public static
 	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
 	                  final GLVector currentNormalizedOrientVec,
 	                  final GLVector newOrientVec)

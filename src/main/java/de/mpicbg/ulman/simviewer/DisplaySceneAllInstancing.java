@@ -34,14 +34,17 @@ import graphics.scenery.*;
 import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
 import sc.iview.SciView;
-import sc.iview.commands.demo.ParticleDemo;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.function.Consumer;
+
 import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
+import de.mpicbg.ulman.simviewer.util.SceneAxesData;
+import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -67,9 +70,9 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			sList.add(ShaderType.VertexShader);
 			sList.add(ShaderType.FragmentShader);
 
-			refMaterials[0] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
-			refMaterials[1] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
-			refMaterials[2] = ShaderMaterial.fromClass(ParticleDemo.class, sList);
+			refMaterials[0] = ShaderMaterial.fromClass(DisplayScene.class, sList);
+			refMaterials[1] = ShaderMaterial.fromClass(DisplayScene.class, sList);
+			refMaterials[2] = ShaderMaterial.fromClass(DisplayScene.class, sList);
 		}
 		else
 		{
@@ -86,58 +89,351 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		}
 
 		//instancing:
-		//define a master instance point (Sphere)
-		refMaterials[0].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
-		refPointNode = factoryForPoints();
-		refPointNode.setMaterial(refMaterials[0]);
+		//define the groups to categorize master instances
+		mastersGroupNodes[CATEGORY1_CELL]      = new Node("cell master instances");
+		mastersGroupNodes[CATEGORY1_CELLDBG]   = new Node("cell debug master instances");
+		mastersGroupNodes[CATEGORY1_GLOBALDBG] = new Node("global debug master instances");
+		scene.addChild(mastersGroupNodes[CATEGORY1_CELL]);
+		scene.addChild(mastersGroupNodes[CATEGORY1_CELLDBG]);
+		scene.addChild(mastersGroupNodes[CATEGORY1_GLOBALDBG]);
+
+		final String NArefNodesPrefix = "should not be visible, temporary ";
+
+		//define a master instances for point (Sphere)
+		refMaterials[CATEGORY0_POINTS].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
+		for (int i=0; i < 3; ++i)
+		{
+			final Sphere sMain = defineSphereMaster();
+			final Sphere sAux  = defineSphereMaster();
+			sAux.setName(NArefNodesPrefix+sAux.getName());  //adjust aux node name
+
+			refPoints[i][CATEGORY2_MAIN] = sMain;
+			refPoints[i][CATEGORY2_AUX]  = sAux;
+
+			mastersGroupNodes[i].addChild(sMain);
+			sMain.addChild(sAux);
+		}
+
+		//define a master instances for line
+		refMaterials[CATEGORY0_LINES].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
+		for (int i=0; i < 3; ++i)
+		{
+			final Cylinder lMain = defineLineMaster();
+			final Cylinder lAux  = defineLineMaster();
+			lAux.setName(NArefNodesPrefix+lAux.getName());  //adjust aux node name
+
+			refLines[i][CATEGORY2_MAIN] = lMain;
+			refLines[i][CATEGORY2_AUX]  = lAux;
+
+			mastersGroupNodes[i].addChild(lMain);
+			lMain.addChild(lAux);
+		}
+
+		//define a master instances for vector as two instances (of the same material):
+		//the vector shaft (slim Cylinder) and head (Cone)
+		refMaterials[CATEGORY0_VECTORSHAFTS].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
+		for (int i=0; i < 3; ++i)
+		{
+			final Cylinder sMain = defineVectorShaftMaster();
+			final Cylinder sAux  = defineVectorShaftMaster();
+			sAux.setName(NArefNodesPrefix+sAux.getName());    //adjust aux node name
+
+			refVectorShafts[i][CATEGORY2_MAIN] = sMain;
+			refVectorShafts[i][CATEGORY2_AUX]  = sAux;
+
+			mastersGroupNodes[i].addChild(sMain);
+			sMain.addChild(sAux);
+
+
+			final Cone cMain = defineVectorHeadMaster();
+			final Cone cAux  = defineVectorHeadMaster();
+			cAux.setName(NArefNodesPrefix+cAux.getName());    //adjust aux node name
+
+			refVectorHeads[i][CATEGORY2_MAIN] = cMain;
+			refVectorHeads[i][CATEGORY2_AUX]  = cAux;
+
+			mastersGroupNodes[i].addChild(cMain);
+			cMain.addChild(cAux);
+		}
+	}
+
+	public
+	void CreateDisplayAxes()
+	{
+		//remove any old axes, if they exist at all...
+		RemoveDisplayAxes();
+
+		axesData = new SceneAxesData();
+		axesData.shapeForThisScene(sceneOffset,sceneSize);
+		axesData.setMaterial(refMaterials[CATEGORY0_LINES]);
+
+		axesData.parentNode = defineLineMaster();
+		axesData.parentNode.setName("Scene orientation compass");
+		axesData.parentNode.setVisible(axesShown);
+		axesData.setParentTo(axesData.parentNode);
+
+		final Iterator<Node> axes = axesData.axesData().iterator();
+		Node a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisRedColor);
+		axesData.parentNode.getInstances().add(a);
+
+		a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisGreenColor);
+		axesData.parentNode.getInstances().add(a);
+
+		a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisBlueColor);
+		axesData.parentNode.getInstances().add(a);
+
+		scene.addChild(axesData.parentNode);
+	}
+
+	public
+	void CreateDisplaySceneBorder()
+	{
+		//remove any old border, if it exists at all...
+		RemoveDisplaySceneBorder();
+
+		borderData = new SceneBorderData();
+		borderData.shapeForThisScene(sceneOffset,sceneSize);
+		borderData.setMaterial(refMaterials[CATEGORY0_LINES]);
+
+		borderData.parentNode = defineLineMaster();
+		borderData.parentNode.setName("Scene border frame");
+		borderData.parentNode.setVisible(borderShown);
+		borderData.setParentTo(borderData.parentNode);
+
+		int i=0;
+		for (Node b : borderData.borderData())
+		{
+			b.getInstancedProperties().put("ModelMatrix", b::getWorld);
+			if (fullInstancing)
+			{
+				//NB: follows the pattern of SceneBorderData.setMaterial(palette)
+				if (i < 4)
+					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderBlueColor);
+				else
+					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderRedColor);
+				++i;
+			}
+			borderData.parentNode.getInstances().add(b);
+		}
+
+		scene.addChild(borderData.parentNode);
+	}
+	//----------------------------------------------------------------------------
+
+	void requestWorldUpdate(boolean force)
+	{
+		scene.updateWorld(true,force);
+		if (axesData != null) axesData.axesData().forEach( (a) -> a.setNeedsUpdate(true) );
+		if (borderData != null) borderData.borderData().forEach( (b) -> b.setNeedsUpdate(true) );
+		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) );
+		lineNodes.values().forEach( (l) -> l.node.setNeedsUpdate(true) );
+		vectorNodes.values().forEach( (v) -> { v.node.setNeedsUpdate(true); v.nodeHead.setNeedsUpdate(true); } );
+	}
+	//----------------------------------------------------------------------------
+
+	private Sphere defineSphereMaster()
+	{
+		final Sphere refPointNode = factoryForPoints();
+		refPointNode.setMaterial(refMaterials[CATEGORY0_POINTS]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		if (fullInstancing)
 			refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
-		refPointNode.setName("master instance - sphere");
-		scene.addChild(refPointNode);
+		refPointNode.setName("sphere master instance");
+		return refPointNode;
+	}
 
-		//define a master instance line
-		refMaterials[1].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
-		refLineNode = factoryForLines();
-		refLineNode.setMaterial(refMaterials[1]);
+	private Cylinder defineLineMaster()
+	{
+		final Cylinder refLineNode = factoryForLines();
+		refLineNode.setMaterial(refMaterials[CATEGORY0_LINES]);
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		if (fullInstancing)
 			refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
-		refLineNode.setName("master instance - line");
-		scene.addChild(refLineNode);
+		refLineNode.setName("line master instance");
+		return refLineNode;
+	}
 
-		//define a master instance vector as two instances (of the same material):
-		//the vector shaft (slim Cylinder) and head (Cone)
-		refMaterials[2].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
-		refVectorNode_Shaft = factoryForVectorShafts();
-		refVectorNode_Shaft.setMaterial(refMaterials[2]);
+	private Cylinder defineVectorShaftMaster()
+	{
+		final Cylinder refVectorNode_Shaft = factoryForVectorShafts();
+		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		if (fullInstancing)
 			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
-		refVectorNode_Shaft.setName("master instance - vector shaft");
-		scene.addChild(refVectorNode_Shaft);
-		//
-		refVectorNode_Head = factoryForVectorHeads();
-		refVectorNode_Head.setMaterial(refMaterials[2]);
+		refVectorNode_Shaft.setName("vector shaft master instance");
+		return refVectorNode_Shaft;
+	}
+
+	private Cone defineVectorHeadMaster()
+	{
+		final Cone refVectorNode_Head = factoryForVectorHeads();
+		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		if (fullInstancing)
 			refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
-		refVectorNode_Head.setName("master instance - vector head");
-		scene.addChild(refVectorNode_Head);
+		refVectorNode_Head.setName("vector head master instance");
+		return refVectorNode_Head;
 	}
 	//----------------------------------------------------------------------------
 
 
-	//instancing, master instances:
-	final Sphere   refPointNode;
-	final Cylinder refLineNode;
-	final Cylinder refVectorNode_Shaft;
-	final Cone     refVectorNode_Head;
+	//nodes (visible in the sciview's scene graph panel)
+	//to gather master instances of the same category
+	private final Node[] mastersGroupNodes = new Node[3];
+
+	//all master instances for:
+	//  the 4 displayed primitives (sphere, "line", vector as head and shaft),
+	//  the 3 categories (cell, cell debug, global debug),
+	//  each category having 2 sub: the main and the aux instances
+	private final Sphere[][]   refPoints       = new Sphere[3][2];
+	private final Cylinder[][] refLines        = new Cylinder[3][2];
+	private final Cylinder[][] refVectorShafts = new Cylinder[3][2];
+	private final Cone[][]     refVectorHeads  = new Cone[3][2];
+
+	static final int CATEGORY0_POINTS       = 0;
+	static final int CATEGORY0_LINES        = 1;
+	static final int CATEGORY0_VECTORSHAFTS = 2;
+	static final int CATEGORY0_VECTORHEADS  = 3;
+	//
+	static final int CATEGORY1_CELL      = 0;
+	static final int CATEGORY1_CELLDBG   = 1;
+	static final int CATEGORY1_GLOBALDBG = 2;
+	//
+	static final int CATEGORY2_MAIN  = 0;
+	static final int CATEGORY2_AUX   = 1;
+
+	private
+	int getCategory1(final int ID)
+	{
+		if ((ID & MASK_CELLID) == 0) return CATEGORY1_GLOBALDBG;
+		if ((ID & MASK_DEBUG) > 0) return CATEGORY1_CELLDBG;
+		return CATEGORY1_CELL;
+	}
+
+	//convenience all-in-one container
+	private final Node[][][] allMasters = { refPoints, refLines, refVectorShafts, refVectorHeads };
+
+	//convenience handlers of the instancing masters
+	private void applyOnAllAuxMasters(final Consumer<Node> method)
+	{
+		for (Node[][] shapeMasters : allMasters)
+			for (Node[] dbgLevelMaster : shapeMasters)
+				method.accept( dbgLevelMaster[CATEGORY2_AUX] );
+	}
+
+	private void applyOnAllMainMasters(final Consumer<Node> method)
+	{
+		for (Node[][] shapeMasters : allMasters)
+			applyOnSpecificMainMasters(shapeMasters,method);
+	}
+
+	private void applyOnSpecificMainMasters(final int cat0, final Consumer<Node> method)
+	{
+		applyOnSpecificMainMasters(allMasters[cat0],method);
+	}
+
+	private void applyOnSpecificMainMasters(final Node[][] masters, final Consumer<Node> method)
+	{
+		for (Node[] n : masters) method.accept( n[CATEGORY2_MAIN] );
+	}
+
 
 	final boolean fullInstancing;
 
 	/** materials used by the master instances: 0-point,1-line,2-vector */
 	final Material[] refMaterials;
+	//----------------------------------------------------------------------------
+
+
+	private boolean updateNodesImmediately = true;
+
+	/** only signals/enables the 'batch process' mode,
+	    this is designed (yet only) for SINGLE-THREAD application! */
+	public
+	void suspendNodesUpdating()
+	{
+	 synchronized (lockOnChangingSceneContent)
+	 {
+		applyOnAllAuxMasters(master -> master.setVisible(false));
+		updateNodesImmediately = false;
+	 }
+	}
+
+	/** calls processNodesYetToBeSmth() and switches back to the 'online process' mode,
+	    this is designed (yet only) for SINGLE-THREAD application! */
+	public
+	void resumeNodesUpdating()
+	{
+	 synchronized (lockOnChangingSceneContent)
+	 {
+		updateNodesImmediately = true;
+
+		//for now, move everything from their aux sub-cats to their main sub-categories
+		for (Node[][] shapeMasters : allMasters)
+			for (Node[] dbgLevelMaster : shapeMasters)
+			{
+				//per one category:
+				final List<Node> auxInstances = dbgLevelMaster[CATEGORY2_AUX].getInstances();
+				dbgLevelMaster[CATEGORY2_MAIN].getInstances().addAll(auxInstances);
+				auxInstances.clear();
+			}
+	 }
+	}
+
+	private
+	Node getAppropriateMaster(final Node[][] shapeMasters, final int ID)
+	{
+		final int cat1 = getCategory1(ID);
+		final int cat2 = updateNodesImmediately ? CATEGORY2_MAIN : CATEGORY2_AUX;
+		return shapeMasters[cat1][cat2];
+	}
+
+	private
+	void addToAppropriateMaster(final int ID, final Point p)
+	{
+		getAppropriateMaster(refPoints,ID).getInstances().add(p.node);
+	}
+
+	private
+	void addToAppropriateMaster(final int ID, final Line l)
+	{
+		getAppropriateMaster(refLines,ID).getInstances().add(l.node);
+	}
+
+	private
+	void addToAppropriateMaster(final int ID, final VectorSH v)
+	{
+		getAppropriateMaster(refVectorShafts,ID).getInstances().add(v.node);
+		getAppropriateMaster(refVectorHeads, ID).getInstances().add(v.nodeHead);
+	}
+
+	private
+	void removeFromAppropriateMaster(final int ID, final Point p)
+	{
+		refPoints[getCategory1(ID)][CATEGORY2_MAIN].getInstances().remove(p.node);
+	}
+
+	private
+	void removeFromAppropriateMaster(final int ID, final Line l)
+	{
+		refLines[getCategory1(ID)][CATEGORY2_MAIN].getInstances().remove(l.node);
+	}
+
+	private
+	void removeFromAppropriateMaster(final int ID, final VectorSH v)
+	{
+		refVectorShafts[getCategory1(ID)][CATEGORY2_MAIN].getInstances().remove(v.node);
+		refVectorHeads[ getCategory1(ID)][CATEGORY2_MAIN].getInstances().remove(v.nodeHead);
+	}
 	//----------------------------------------------------------------------------
 
 
@@ -156,8 +452,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				//scene.removeChild(n.node); -- was never added to the scene
-				refPointNode.getInstances().remove(n.node);
+				removeFromAppropriateMaster(ID,n);
 				pointNodes.remove(ID);
 			}
 			return;
@@ -171,7 +466,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			final Node nn = n.node;
 
 			//define the point
-			nn.setMaterial(refPointNode.getMaterial());
+			nn.setMaterial(refMaterials[CATEGORY0_POINTS]);
 			nn.setScale(n.radius);
 			nn.setPosition(n.centre);
 
@@ -180,8 +475,8 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			if (fullInstancing)
 				nn.getInstancedProperties().put("Color", n::getColorRGB);
 			nn.setParent(scene);
-			refPointNode.getInstances().add(nn);
 
+			addToAppropriateMaster(ID,n);
 			pointNodes.put(ID,n);
 			showOrHideMe(ID,n.node,spheresShown);
 		}
@@ -189,7 +484,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		//now update the point with the current data
 		n.update(p);
 		n.lastSeenTick = tickCounter;
-		n.node.updateWorld(false,false);
+		n.node.setNeedsUpdate(true);
 	 }
 	}
 
@@ -208,8 +503,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				//scene.removeChild(n.node); -- was never added to the scene
-				refLineNode.getInstances().remove(n.node);
+				removeFromAppropriateMaster(ID,n);
 				lineNodes.remove(ID);
 			}
 			return;
@@ -223,7 +517,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			final Node nn = n.node;
 
 			//define the line
-			nn.setMaterial(refLineNode.getMaterial());
+			nn.setMaterial(refMaterials[CATEGORY0_LINES]);
 			nn.setScale(n.auxScale);
 			nn.setPosition(n.base);
 
@@ -232,8 +526,8 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			if (fullInstancing)
 				nn.getInstancedProperties().put("Color", n::getColorRGB);
 			nn.setParent(scene);
-			refLineNode.getInstances().add(nn);
 
+			addToAppropriateMaster(ID,n);
 			lineNodes.put(ID,n);
 			showOrHideMe(ID,n.node,linesShown);
 		}
@@ -245,7 +539,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		//finally, set the new absolute orientation
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
-		//NB: this triggers n.node.updateWorld() automatically
+		n.node.setNeedsUpdate(true);
 	 }
 	}
 
@@ -264,9 +558,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		{
 			if (n != null)
 			{
-				//scene.removeChild(n.node); -- was never added to the scene
-				refVectorNode_Shaft.getInstances().remove(n.node);
-				refVectorNode_Head.getInstances().remove(n.nodeHead);
+				removeFromAppropriateMaster(ID,n);
 				vectorNodes.remove(ID);
 			}
 			return;
@@ -281,11 +573,11 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			final Node nh = n.nodeHead;
 
 			//define the vector
-			ns.setMaterial(refVectorNode_Shaft.getMaterial());
+			ns.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 			ns.setScale(n.auxScale);
 			ns.setPosition(n.base);
 
-			nh.setMaterial(refVectorNode_Head.getMaterial());
+			nh.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 			nh.setScale(n.auxScaleHead);
 			nh.setPosition(n.auxHeadBase);
 
@@ -294,14 +586,13 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			if (fullInstancing)
 				ns.getInstancedProperties().put("Color", n::getColorRGB);
 			ns.setParent(scene);
-			refVectorNode_Shaft.getInstances().add(ns);
 
 			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
 			if (fullInstancing)
 				nh.getInstancedProperties().put("Color", n::getColorRGB);
 			nh.setParent(scene);
-			refVectorNode_Head.getInstances().add(nh);
 
+			addToAppropriateMaster(ID,n);
 			vectorNodes.put(ID,n);
 			showOrHideMeForVectorSH(ID);
 		}
@@ -314,7 +605,8 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
-		//NB: this triggers n.nodes.updateWorld() automatically
+		n.node.setNeedsUpdate(true);
+		n.nodeHead.setNeedsUpdate(true);
 	 }
 	}
 
@@ -330,12 +622,12 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		Iterator<Integer> i = pointNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final Point p = pointNodes.get(i.next());
+			final int ID = i.next();
+			final Point p = pointNodes.get(ID);
 
 			if (p.lastSeenTick+tolerance < tickCounter)
 			{
-				//scene.removeChild(p.node); -- was never added to the scene
-				refPointNode.getInstances().remove(p.node);
+				removeFromAppropriateMaster(ID,p);
 				i.remove();
 			}
 		}
@@ -343,12 +635,12 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		i = lineNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final Line l = lineNodes.get(i.next());
+			final int ID = i.next();
+			final Line l = lineNodes.get(ID);
 
 			if (l.lastSeenTick+tolerance < tickCounter)
 			{
-				//scene.removeChild(l.node); -- was never added to the scene
-				refLineNode.getInstances().remove(l.node);
+				removeFromAppropriateMaster(ID,l);
 				i.remove();
 			}
 		}
@@ -356,13 +648,12 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		i = vectorNodes.keySet().iterator();
 		while (i.hasNext())
 		{
-			final VectorSH v = vectorNodes.get(i.next());
+			final int ID = i.next();
+			final VectorSH v = vectorNodes.get(ID);
 
 			if (v.lastSeenTick+tolerance < tickCounter)
 			{
-				//scene.removeChild(v.node); -- was never added to the scene
-				refVectorNode_Shaft.getInstances().remove(v.node);
-				refVectorNode_Head.getInstances().remove(v.nodeHead);
+				removeFromAppropriateMaster(ID,v);
 				i.remove();
 			}
 		}

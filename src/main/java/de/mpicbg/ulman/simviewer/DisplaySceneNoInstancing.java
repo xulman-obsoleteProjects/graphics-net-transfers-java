@@ -164,7 +164,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		//finally, set the new absolute orientation
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
-		//NB: this triggers n.node.updateWorld() automatically
+		this.nodeSetNeedsUpdate(n.node);
 	 }
 	}
 
@@ -222,7 +222,9 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		n.node.getRotation().setIdentity();
 		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
-		//NB: this triggers n.nodes.updateWorld() automatically
+		//NB: this triggers n.nodeHead.updateWorld() automatically
+		//NB: but does not trigger the update of the vector shaft
+		this.nodeSetNeedsUpdate(n.node);
 	 }
 	}
 
