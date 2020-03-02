@@ -41,6 +41,7 @@ import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
 import de.mpicbg.ulman.simviewer.util.Palette;
+import de.mpicbg.ulman.simviewer.util.SceneAxesData;
 import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
@@ -290,18 +291,14 @@ public class DisplayScene
 		CreateFixedLightsRamp();
 		while (ToggleFixedLights() != backupLightsState) ;
 
-		borderData.shapeForThisScene(sceneOffset,sceneSize);
-
-		boolean backupState = axesShown;
-		RemoveDisplayAxes();
-		CreateDisplayAxes();
-		if (backupState) ToggleDisplayAxes();
+		if (borderData != null) borderData.shapeForThisScene(sceneOffset,sceneSize);
+		if ( axesData  != null)   axesData.shapeForThisScene(sceneOffset,sceneSize);
 	}
 	//----------------------------------------------------------------------------
 
 
-	private Node[]   axesData = null;
-	private boolean axesShown = false;
+	protected SceneAxesData axesData = null;
+	protected boolean axesShown = false;
 
 	public
 	void CreateDisplayAxes()
@@ -309,57 +306,27 @@ public class DisplayScene
 		//remove any old axes, if they exist at all...
 		RemoveDisplayAxes();
 
-		final float barRadius = 1.0f;
-		final float barLength = 30.0f;
+		axesData = new SceneAxesData();
+		axesData.shapeForThisScene(sceneOffset,sceneSize);
+		axesData.setMaterial(materials);
 
-		axesData = new Node[] {
-			new Node("Scene orientation compass"),
-			new Cylinder(barRadius,barLength,4),
-			new Cylinder(barRadius,barLength,4),
-			new Cylinder(barRadius,barLength,4)};
-
-		axesData[0].setVisible(false);
-		scene.addChild(axesData[0]);
-
-		//set material - color
-		//NB: RGB colors ~ XYZ axes
-		axesData[1].setMaterial(materials.getMaterial(1));
-		axesData[2].setMaterial(materials.getMaterial(2));
-		axesData[3].setMaterial(materials.getMaterial(3));
-
-		axesData[1].setName("compass axis: X");
-		axesData[2].setName("compass axis: Y");
-		axesData[3].setName("compass axis: Z");
-
-		//set orientation for x,z axes
-		ReOrientNode(axesData[1],defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-		ReOrientNode(axesData[3],defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
-
-		//place all axes into the scene centre
-		final GLVector centre = new GLVector(
-			(sceneOffset[0] + 0.5f*sceneSize[0]),
-			(sceneOffset[1] + 0.5f*sceneSize[1]),
-			(sceneOffset[2] + 0.5f*sceneSize[2]));
-
-		for (int i=1; i < 4; ++i)
-		{
-			axesData[i].setPosition(centre);
-			axesData[0].addChild(axesData[i]);
-		}
-
-		axesShown = false;
+		axesData.parentNode = new Node("Scene orientation compass");
+		axesData.becomeChildOf(axesData.parentNode);
+		scene.addChild(axesData.parentNode);
+		axesData.parentNode.setVisible(axesShown);
+		//NB: set visibility as the last so that it can propagate to
+		//all children (and make them synchronized w.r.t. visibility)
 	}
 
 	public
 	void RemoveDisplayAxes()
 	{
+		axesShown = false;
 		if (axesData == null) return;
-
-		for (int i=1; i < axesData.length; ++i) axesData[0].removeChild(axesData[i]);
-		scene.removeChild(axesData[0]);
+		if (axesData.parentNode != null)
+			scene.removeChild(axesData.parentNode);
 
 		axesData = null;
-		axesShown = false;
 	}
 
 	public
@@ -376,8 +343,7 @@ public class DisplayScene
 		axesShown ^= true;
 
 		//adjust the visibility
-		for (Node n : axesData)
-			n.setVisible(axesShown);
+		axesData.parentNode.setVisible(axesShown);
 
 		return axesShown;
 	}
@@ -401,7 +367,7 @@ public class DisplayScene
 		borderData.shapeForThisScene(sceneOffset,sceneSize);
 		borderData.setMaterial(materials);
 
-		borderData.parentNode = new Node("Scene border");
+		borderData.parentNode = new Node("Scene border frame");
 		borderData.becomeChildOf(borderData.parentNode);
 		scene.addChild(borderData.parentNode);
 		borderData.parentNode.setVisible(borderShown);

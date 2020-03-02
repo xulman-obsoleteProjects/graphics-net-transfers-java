@@ -43,6 +43,7 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
+import de.mpicbg.ulman.simviewer.util.SceneAxesData;
 import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
@@ -157,6 +158,43 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	}
 
 	public
+	void CreateDisplayAxes()
+	{
+		//remove any old axes, if they exist at all...
+		RemoveDisplayAxes();
+
+		axesData = new SceneAxesData();
+		axesData.shapeForThisScene(sceneOffset,sceneSize);
+		axesData.setMaterial(refMaterials[CATEGORY0_LINES]);
+
+		axesData.parentNode = defineLineMaster();
+		axesData.parentNode.setName("Scene orientation compass");
+		axesData.parentNode.setVisible(axesShown);
+		axesData.setParentTo(axesData.parentNode);
+
+		final Iterator<Node> axes = axesData.axesData().iterator();
+		Node a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisRedColor);
+		axesData.parentNode.getInstances().add(a);
+
+		a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisGreenColor);
+		axesData.parentNode.getInstances().add(a);
+
+		a = axes.next();
+		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
+		if (fullInstancing)
+			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisBlueColor);
+		axesData.parentNode.getInstances().add(a);
+
+		scene.addChild(axesData.parentNode);
+	}
+
+	public
 	void CreateDisplaySceneBorder()
 	{
 		//remove any old border, if it exists at all...
@@ -167,7 +205,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		borderData.setMaterial(refMaterials[CATEGORY0_LINES]);
 
 		borderData.parentNode = defineLineMaster();
-		borderData.parentNode.setName("Scene frame");
+		borderData.parentNode.setName("Scene border frame");
 		borderData.parentNode.setVisible(borderShown);
 		borderData.setParentTo(borderData.parentNode);
 
