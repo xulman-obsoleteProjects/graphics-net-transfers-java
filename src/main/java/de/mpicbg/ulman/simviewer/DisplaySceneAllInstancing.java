@@ -466,6 +466,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 			addToAppropriateMaster(ID,n);
 			pointNodes.put(ID,n);
+			showOrHideMe(ID,n.node,spheresShown);
 		}
 
 		//now update the point with the current data
@@ -516,6 +517,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 			addToAppropriateMaster(ID,n);
 			lineNodes.put(ID,n);
+			showOrHideMe(ID,n.node,linesShown);
 		}
 
 		//update the line with the current data
@@ -580,6 +582,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 			addToAppropriateMaster(ID,n);
 			vectorNodes.put(ID,n);
+			showOrHideMeForVectorSH(ID);
 		}
 
 		//update the vector with the current data
