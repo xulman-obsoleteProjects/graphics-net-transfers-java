@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>27.0.1</version>
+		<version>29.2.0</version>
 		<relativePath />
 	</parent>
 
@@ -83,11 +83,9 @@
 		<package-name>de.mpicbg.ulman.simviewer</package-name>
 		<main-class>de.mpicbg.ulman.simviewer</main-class>
 
-		<!-- the dependencies copied verbatim from the dependency list
-		     of the respective version of the SciView -->
-		<sciview.version>064d0ec</sciview.version>
-		<scenery.version>7d3b58a</scenery.version>
-		<cleargl.version>2.2.10</cleargl.version>
+		<scenery.version>QWERTY</scenery.version>
+		<sciview.version>0.2.0-beta-9-SNAPSHOT</sciview.version>
+		<ui-behaviour.version>2.0.3-SNAPSHOT</ui-behaviour.version>
 	</properties>
 
 	<repositories>

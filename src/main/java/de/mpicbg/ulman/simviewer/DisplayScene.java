@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import graphics.scenery.*;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import sc.iview.SciView;
@@ -74,8 +74,8 @@ public class DisplayScene
 		DsFactor = 0.2f;
 
 		//introduce an invisible "fake" object
-		scene = new Box(new GLVector(0.0f,3));
-		scene.setScale(new GLVector(DsFactor,3));
+		scene = new Box(new Vector3f(0));
+		scene.setScale(new Vector3f(DsFactor));
 		scene.setName("SimViewer");
 		sciView.addNode(scene);
 
@@ -86,8 +86,8 @@ public class DisplayScene
 		//init the colors -- the material lookup table
 		final Material sampleMat = new Material();
 		sampleMat.setCullingMode(Material.CullingMode.None);
-		sampleMat.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
-		sampleMat.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+		sampleMat.setAmbient(  new Vector3f(1.0f, 1.0f, 1.0f) );
+		sampleMat.setSpecular( new Vector3f(1.0f, 1.0f, 1.0f) );
 
 		materials = new Palette(1);
 		materials.setMaterialsAlike(sampleMat);
@@ -132,7 +132,7 @@ public class DisplayScene
 	protected
 	Cone factoryForVectorHeads()
 	{
-		return new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, defaultNormalizedUpVector);
+		return new Cone(vec_headToShaftWidthRatio * 0.3f, vec_headLengthRatio, 4, new Vector3f(0,1,0));
 	}
 
 	final float vec_headLengthRatio = 0.2f;        //relative scale (0,1)
@@ -157,9 +157,6 @@ public class DisplayScene
 
 	/** fixed lookup table with colors, in the form of materials... */
 	Palette materials;
-
-	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
-	public static final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
 	void requestWorldUpdate(boolean force)
@@ -187,7 +184,7 @@ public class DisplayScene
 	void RescaleScene(final float newDsFactor)
 	{
 		RepositionFixedLightsRamp(newDsFactor);
-		scene.setScale(new GLVector(newDsFactor,3));
+		scene.setScale(new Vector3f(newDsFactor));
 		DsFactor = newDsFactor;
 		requestWorldUpdate(false);
 	}
@@ -212,36 +209,37 @@ public class DisplayScene
 		//final OrientedBoundingBox box = scene.getMaximumBoundingBox();
 		//
 		//scan over all registered elements (Points, Lines, Vectors...) and determine the AABB
-		final GLVector min = new GLVector(+99999999999.f,3);
-		final GLVector max = new GLVector(-99999999999.f,3);
+		final Vector3f min = new Vector3f(+99999999999.f);
+		final Vector3f max = new Vector3f(-99999999999.f);
+		final Vector3f tmp = new Vector3f();
 		for (Point p : pointNodes.values())
 		{
 			//NB: radius should be non-negative
-			updateMin(min, p.centre.minus(p.radius));
-			updateMax(max, p.centre.plus(p.radius));
+			updateMin(min, tmp.set(p.centre).sub(p.radius));
+			updateMax(max, tmp.set(p.centre).add(p.radius));
 		}
 		for (Line l : lineNodes.values())
 		{
-			updateMin(min, l.base);
-			updateMin(min, l.base.plus(l.vector));
-			updateMax(max, l.base);
-			updateMax(max, l.base.plus(l.vector));
+			updateMin(min, tmp.set(l.base));
+			updateMin(min, tmp.set(l.base).add(l.vector));
+			updateMax(max, tmp.set(l.base));
+			updateMax(max, tmp.set(l.base).add(l.vector));
 		}
 		for (VectorSH v : vectorNodes.values())
 		{
-			updateMin(min, v.base);
-			updateMin(min, v.base.plus(v.vector));
-			updateMax(max, v.base);
-			updateMax(max, v.base.plus(v.vector));
+			updateMin(min, tmp.set(v.base));
+			updateMin(min, tmp.set(v.base).add(v.vector));
+			updateMax(max, tmp.set(v.base));
+			updateMax(max, tmp.set(v.base).add(v.vector));
 		}
 
-		sceneOffset[0] = min.x();
-		sceneOffset[1] = min.y();
-		sceneOffset[2] = min.z();
+		sceneOffset[0] = min.x;
+		sceneOffset[1] = min.y;
+		sceneOffset[2] = min.z;
 
-		sceneSize[0] = max.x();
-		sceneSize[1] = max.y();
-		sceneSize[2] = max.z();
+		sceneSize[0] = max.x;
+		sceneSize[1] = max.y;
+		sceneSize[2] = max.z;
 
 		System.out.println("detected span: "
 		       +sceneOffset[0]+"-"+sceneSize[0]+"  x  "
@@ -258,17 +256,17 @@ public class DisplayScene
 		this.ResizeScene(sceneOffset, sceneSize);
 	}
 
-	private void updateMin(final GLVector min, final GLVector pos)
+	private void updateMin(final Vector3f min, final Vector3f pos)
 	{
-		min.set(0, Math.min(min.x(),pos.x()) );
-		min.set(1, Math.min(min.y(),pos.y()) );
-		min.set(2, Math.min(min.z(),pos.z()) );
+		min.x = Math.min( min.x,pos.x );
+		min.y = Math.min( min.y,pos.y );
+		min.z = Math.min( min.z,pos.z );
 	}
-	private void updateMax(final GLVector max, final GLVector pos)
+	private void updateMax(final Vector3f max, final Vector3f pos)
 	{
-		max.set(0, Math.max(max.x(),pos.x()) );
-		max.set(1, Math.max(max.y(),pos.y()) );
-		max.set(2, Math.max(max.z(),pos.z()) );
+		max.x = Math.max( max.x,pos.x );
+		max.y = Math.max( max.y,pos.y );
+		max.z = Math.max( max.z,pos.z );
 	}
 
 	/** resets the scene offset and size to the one given, and rebuilds and repositions
@@ -418,7 +416,7 @@ public class DisplayScene
 
 
 	//the state flags of the lights
-	public enum fixedLightsState { NONE, BOTH, FRONT, REAR, CIRCLE };
+	public enum fixedLightsState { NONE, BOTH, FRONT, REAR, CIRCLE }
 
 	private PointLight[][] fixedLights = null;
 	private fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
@@ -455,19 +453,19 @@ public class DisplayScene
 
 		//create the lights, one for each upper corner of the scene
 		fixedLights = new PointLight[][] { new PointLight[6], new PointLight[6], new PointLight[noOfCircleLights] };
-		(fixedLights[0][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zNear));
-		(fixedLights[0][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zNear));
-		(fixedLights[0][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zNearCentre));
-		(fixedLights[0][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zNearCentre));
-		(fixedLights[0][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zNear));
-		(fixedLights[0][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zNear));
+		(fixedLights[0][0] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yTop   ,zNear));
+		(fixedLights[0][1] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yBottom,zNear));
+		(fixedLights[0][2] = new PointLight(radius)).setPosition(new Vector3f(xCentre,yTop   ,zNearCentre));
+		(fixedLights[0][3] = new PointLight(radius)).setPosition(new Vector3f(xCentre,yBottom,zNearCentre));
+		(fixedLights[0][4] = new PointLight(radius)).setPosition(new Vector3f(xRight ,yTop   ,zNear));
+		(fixedLights[0][5] = new PointLight(radius)).setPosition(new Vector3f(xRight ,yBottom,zNear));
 
-		(fixedLights[1][0] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yTop   ,zFar));
-		(fixedLights[1][1] = new PointLight(radius)).setPosition(new GLVector(xLeft  ,yBottom,zFar));
-		(fixedLights[1][2] = new PointLight(radius)).setPosition(new GLVector(xCentre,yTop   ,zFarCentre));
-		(fixedLights[1][3] = new PointLight(radius)).setPosition(new GLVector(xCentre,yBottom,zFarCentre));
-		(fixedLights[1][4] = new PointLight(radius)).setPosition(new GLVector(xRight ,yTop   ,zFar));
-		(fixedLights[1][5] = new PointLight(radius)).setPosition(new GLVector(xRight ,yBottom,zFar));
+		(fixedLights[1][0] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yTop   ,zFar));
+		(fixedLights[1][1] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yBottom,zFar));
+		(fixedLights[1][2] = new PointLight(radius)).setPosition(new Vector3f(xCentre,yTop   ,zFarCentre));
+		(fixedLights[1][3] = new PointLight(radius)).setPosition(new Vector3f(xCentre,yBottom,zFarCentre));
+		(fixedLights[1][4] = new PointLight(radius)).setPosition(new Vector3f(xRight ,yTop   ,zFar));
+		(fixedLights[1][5] = new PointLight(radius)).setPosition(new Vector3f(xRight ,yBottom,zFar));
 
 		fixedLights[0][0].setName("PointLight Ramp1: x-left, y-bottom, z-near");
 		fixedLights[0][1].setName("PointLight Ramp1: x-left, y-top, z-near");
@@ -487,14 +485,14 @@ public class DisplayScene
 		{
 			final double ang = 2.0 * Math.PI * i / noOfCircleLights;
 			(fixedLights[2][i] = new PointLight(radius)).setPosition(
-				new GLVector( xCentre + (float)(Math.cos(ang) * 0.8 * sceneSize[0] * DsFactor),
+				new Vector3f( xCentre + (float)(Math.cos(ang) * 0.8 * sceneSize[0] * DsFactor),
 				              yCentre,
 				              zCentre + (float)(Math.sin(ang) * 0.8 * sceneSize[2] * DsFactor) ));
 			fixedLights[2][i].setName("PointLight Circle at "+(360*i/noOfCircleLights)+" deg");
 		}
 
 		//common settings of all lights
-		final GLVector lightsColor = new GLVector(1.0f, 1.0f, 1.0f);
+		final Vector3f lightsColor = new Vector3f(1.0f, 1.0f, 1.0f);
 		for (PointLight[] lightRamp : fixedLights)
 			for (PointLight l : lightRamp)
 			{
@@ -506,7 +504,7 @@ public class DisplayScene
 
 		fixedLightsChoosen = fixedLightsState.NONE;
 
-		/** ENABLE THIS TO HAVE A SMALL SPHERES PLACED WHERE THE LIGHTS ARE */
+		/* ENABLE THIS TO HAVE A SMALL SPHERES PLACED WHERE THE LIGHTS ARE */
 		/*
 		for (PointLight[] lightRamp : fixedLights)
 			for (PointLight l : lightRamp)
@@ -524,13 +522,10 @@ public class DisplayScene
 		for (PointLight[] lightRamp : fixedLights)
 			for (PointLight l : lightRamp)
 			{
-				final GLVector pos = l.getPosition();
-				for (int i = 0; i < 3; ++i)
-                    pos.set(i, pos.get(i)*correction);
-				l.setPosition( pos );
-
 				l.setLightRadius( l.getLightRadius()*correction );
 				l.setIntensity( l.getIntensity()*correction );
+				l.getPosition().mul( correction );
+				l.setNeedsUpdate(true);
 			}
 	}
 
@@ -767,7 +762,7 @@ public class DisplayScene
 
 
 	/** groups visibility conditions across modes for one displayed object, e.g. sphere */
-	private class elementVisibility
+	private static class elementVisibility
 	{
 		public boolean g_Mode = true;   //the cell debug mode, operated with 'g' key
 		public boolean G_Mode = true;   //the global purpose debug mode, operated with 'G'
@@ -1047,56 +1042,13 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
-	    the axis of rotational symmetry in a cylinder) given with _normalized_
-	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
 	public static
-	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
-	                  final GLVector newOrientVec)
+	void rotateNodeToDir(final Node node, final Vector3f newDir)
 	{
-		//plan: vector/cross product of the initial object's orientation and the new orientation,
-		//and rotate by angle that is taken from the scalar product of the two
-
-		//the rotate angle
-		final float rotAngle = (float)Math.acos(currentNormalizedOrientVec.times(newOrientVec.getNormalized()));
-
-		//for now, the second vector for the cross product
-		GLVector tmpVec = newOrientVec;
-
-		//two special cases when the two orientations are (nearly) colinear:
-		//
-		//a) the same direction -> nothing to do (don't even update the currentNormalizedOrientVec)
-		if (Math.abs(rotAngle) < 0.01f) return;
-		//
-		//b) the opposite direction -> need to "flip"
-		if (Math.abs(rotAngle-Math.PI) < 0.01f)
-		{
-			//define non-colinear helping vector, e.g. take a perpendicular one
-			tmpVec = new GLVector(-newOrientVec.y(), newOrientVec.x(), 0.0f);
-		}
-
-		//axis along which to perform the rotation
-		tmpVec = currentNormalizedOrientVec.cross(tmpVec).normalize();
-		node.getRotation().rotateByAngleNormalAxis(rotAngle, tmpVec.x(),tmpVec.y(),tmpVec.z());
-
-		//System.out.println("rot axis=("+tmpVec.x()+","+tmpVec.y()+","+tmpVec.z()
-		//                   +"), rot angle="+rotAngle+" rad");
+		node.getRotation().identity().rotateTo(initialDir, newDir);
 	}
 
-	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
-	    will be stored into the currentNormalizedOrientVec. */
-	public static
-	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
-	                  final GLVector currentNormalizedOrientVec,
-	                  final GLVector newOrientVec)
-	{
-		ReOrientNode(node, currentNormalizedOrientVec, newOrientVec);
-
-		//update the current orientation
-		currentNormalizedOrientVec.minusAssign(currentNormalizedOrientVec);
-		currentNormalizedOrientVec.plusAssign(newOrientVec);
-		currentNormalizedOrientVec.normalize();
-	}
+	private static final Vector3f initialDir = new Vector3f(0,1,0);
 	//----------------------------------------------------------------------------
 
 

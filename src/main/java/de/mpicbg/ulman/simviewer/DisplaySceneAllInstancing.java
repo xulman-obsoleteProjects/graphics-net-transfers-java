@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import graphics.scenery.*;
 import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
@@ -84,12 +84,14 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		for (Material m : refMaterials)
 		{
 			m.setCullingMode(CullingMode.None);
-			m.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
-			m.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+			m.setAmbient(  new Vector3f(1.0f, 1.0f, 1.0f) );
+			m.setSpecular( new Vector3f(1.0f, 1.0f, 1.0f) );
 		}
 
 		//instancing:
-		//define the groups to categorize master instances
+		//grouping nodes (visible in the sciview's scene graph panel)
+		//to gather master instances of the same category
+		final Node[] mastersGroupNodes = new Node[3];
 		mastersGroupNodes[CATEGORY1_CELL]      = new Node("cell master instances");
 		mastersGroupNodes[CATEGORY1_CELLDBG]   = new Node("cell debug master instances");
 		mastersGroupNodes[CATEGORY1_GLOBALDBG] = new Node("global debug master instances");
@@ -100,7 +102,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		final String NArefNodesPrefix = "should not be visible, temporary ";
 
 		//define a master instances for point (Sphere)
-		refMaterials[CATEGORY0_POINTS].setDiffuse(new GLVector(1.0f,0.6f,0.6f));
+		refMaterials[CATEGORY0_POINTS].setDiffuse(new Vector3f(1.0f,0.6f,0.6f));
 		for (int i=0; i < 3; ++i)
 		{
 			final Sphere sMain = defineSphereMaster();
@@ -115,7 +117,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		}
 
 		//define a master instances for line
-		refMaterials[CATEGORY0_LINES].setDiffuse(new GLVector(0.6f,1.0f,0.6f));
+		refMaterials[CATEGORY0_LINES].setDiffuse(new Vector3f(0.6f,1.0f,0.6f));
 		for (int i=0; i < 3; ++i)
 		{
 			final Cylinder lMain = defineLineMaster();
@@ -131,7 +133,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		//define a master instances for vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
-		refMaterials[CATEGORY0_VECTORSHAFTS].setDiffuse(new GLVector(0.6f,0.6f,1.0f));
+		refMaterials[CATEGORY0_VECTORSHAFTS].setDiffuse(new Vector3f(0.6f,0.6f,1.0f));
 		for (int i=0; i < 3; ++i)
 		{
 			final Cylinder sMain = defineVectorShaftMaster();
@@ -246,7 +248,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refPointNode.setMaterial(refMaterials[CATEGORY0_POINTS]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		if (fullInstancing)
-			refPointNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+			refPointNode.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
 		refPointNode.setName("sphere master instance");
 		return refPointNode;
 	}
@@ -257,7 +259,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refLineNode.setMaterial(refMaterials[CATEGORY0_LINES]);
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		if (fullInstancing)
-			refLineNode.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+			refLineNode.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
 		refLineNode.setName("line master instance");
 		return refLineNode;
 	}
@@ -268,7 +270,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		if (fullInstancing)
-			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
 		refVectorNode_Shaft.setName("vector shaft master instance");
 		return refVectorNode_Shaft;
 	}
@@ -279,16 +281,11 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		if (fullInstancing)
-			refVectorNode_Head.getInstancedProperties().put("Color", () -> new GLVector(0.5f, 0.5f, 0.5f, 1.0f));
+			refVectorNode_Head.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
 		refVectorNode_Head.setName("vector head master instance");
 		return refVectorNode_Head;
 	}
 	//----------------------------------------------------------------------------
-
-
-	//nodes (visible in the sciview's scene graph panel)
-	//to gather master instances of the same category
-	private final Node[] mastersGroupNodes = new Node[3];
 
 	//all master instances for:
 	//  the 4 displayed primitives (sphere, "line", vector as head and shaft),
@@ -448,7 +445,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		//negative color is an agreed signal to remove the point
 		//also, get rid of a point whose radius is "impossible"
-		if (p.colorRGB.x() < 0 || p.radius.x() < 0.0f)
+		if (p.colorRGB.x < 0 || p.radius.x < 0.0f)
 		{
 			if (n != null)
 			{
@@ -499,7 +496,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		Line n = lineNodes.get(ID);
 
 		//negative color is an agreed signal to remove the line
-		if (l.colorRGB.x() < 0)
+		if (l.colorRGB.x < 0)
 		{
 			if (n != null)
 			{
@@ -537,8 +534,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
+		DisplayScene.rotateNodeToDir(n.node, l.vector);
 		n.node.setNeedsUpdate(true);
 	 }
 	}
@@ -554,7 +550,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
-		if (v.colorRGB.x() < 0)
+		if (v.colorRGB.x < 0)
 		{
 			if (n != null)
 			{
@@ -602,8 +598,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		DisplayScene.rotateNodeToDir(n.node, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
 		n.node.setNeedsUpdate(true);
 		n.nodeHead.setNeedsUpdate(true);

@@ -45,16 +45,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// ------- to satisfy the main() method -------
-import graphics.scenery.SceneryBase;
-import io.scif.SCIFIOService;
-import net.imagej.ImageJService;
-import org.scijava.Context;
-import org.scijava.service.SciJavaService;
-import org.scijava.thread.ThreadService;
-import org.scijava.ui.UIService;
-import sc.iview.SciViewService;
-
 /**
  * SimViewer.
  *
@@ -273,20 +263,10 @@ public class SimViewer implements Command
 
 	//----------------------------------------------------------------------------
 	/**
-	 * Entry point for testing SciView functionality.
-	 *
-	 * @author Kyle Harrington
+	 * Entry point for testing SimViewer functionality.,
 	 */
-	public static void main( String... args )
+	public static void main( String... args ) throws Exception
 	{
-		SceneryBase.xinitThreads();
-
-		System.setProperty( "scijava.log.level:sc.iview", "info" );
-		Context context = new Context( ImageJService.class, SciJavaService.class, SCIFIOService.class, ThreadService.class);
-
-		UIService ui = context.service( UIService.class );
-		if( !ui.isVisible() ) ui.showUI();
-
-		context.service( SciViewService.class ).getOrCreateActiveSciView();
+	    sc.iview.Main.main();
 	}
 }

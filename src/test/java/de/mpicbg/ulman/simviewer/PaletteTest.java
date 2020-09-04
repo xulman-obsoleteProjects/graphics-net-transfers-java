@@ -1,7 +1,7 @@
 package de.mpicbg.ulman.simviewer;
 
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import de.mpicbg.ulman.simviewer.util.Palette;
 
 public class PaletteTest
@@ -43,13 +43,13 @@ public class PaletteTest
 
 	private static void reportMatching(final Palette p, final float r,final float g,final float b)
 	{
-		final GLVector color = p.getMaterial(r,g,b).getDiffuse();
+		final Vector3f color = p.getMaterial(r,g,b).getDiffuse();
 		System.out.println(r + "," + g + "," + b + "  ->  " + color.x() + "," + color.y() + "," + color.z());
 	}
 
 	private static void reportMatching(final Palette p, final int index)
 	{
-		final GLVector color = p.getMaterial(index).getDiffuse();
+		final Vector3f color = p.getMaterial(index).getDiffuse();
 		System.out.println("index "+index+"  ->  " + color.x() + "," + color.y() + "," + color.z());
 	}
 }

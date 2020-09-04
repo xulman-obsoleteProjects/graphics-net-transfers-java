@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,25 +29,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer.elements;
 
-import cleargl.GLVector;
 import graphics.scenery.Node;
+import org.joml.Vector3f;
 
 /** Corresponds to one element that simulator's DrawVector() can send.
     Compared to the superclass Vector, this one recognizes vector as
     two graphical elements, a Shaft and a Head, and has therefore more
     housekeeping attributes.
     The class governs all necessary pieces of information to display
-    (user-defined scaled version of) the vector, and the Scenery's Nodes are
+    (user-defined scaled version of) the vector, and the SciView's Nodes are
     pointed inside this class to (re)fetch the actual display data/instructions. */
 public class VectorSH extends Vector
 {
-	public VectorSH() //without connection to Scenery
+	public VectorSH() //without connection to SciView
 	{
 		super();
 		nodeHead = null;
 	}
 
-	public VectorSH(final Node shaftNode, //with connection to Scenery
+	public VectorSH(final Node shaftNode, //with connection to SciView
 	                final Node headNode)
 	{
 		super(shaftNode);
@@ -62,15 +62,16 @@ public class VectorSH extends Vector
 	// ------- derived (aux) attributes -------
 	/** similar to the idea behind super.auxScale, we host this extra
 	    memory to adjust separately the scaling of the vector's head */
-	public final GLVector auxScaleHead = new GLVector(1.f,3);
+	public final Vector3f auxScaleHead = new Vector3f(1);
 
 	/** this attribute is a function of vector:
 	    it defines the position/placement of the head of the vector */
-	public final GLVector auxHeadBase = new GLVector(0.f,3);
+	public final Vector3f auxHeadBase = new Vector3f(0);
 
 	// ------- setters -------
 	/** shadow/override the superclass'es applyScale() with a new one
 	    that can provide default values for the 'headPosRatio' */
+	@Override
 	public void applyScale(final float scale)
 	{
 		this.applyScale(scale,0.2f);
@@ -78,6 +79,7 @@ public class VectorSH extends Vector
 
 	/** shadow/override the superclass'es update() with a new one
 	    that can provide default values for the 'headPosRatio' */
+	@Override
 	public void update(final Vector v)
 	{
 		this.update(v,0.2f);
@@ -93,18 +95,15 @@ public class VectorSH extends Vector
 
 		//how to scale the head?
 		// - longitudially/axially the same as the vector's shaft
-		auxScaleHead.set(1, auxScale.y());
+		auxScaleHead.y = auxScale.y;
 		//
 		// - laterally don't scale (that is keep fixed absolute diameter)
 		//   unless the head's length will be much shorter than the head's width
 		//   in which case we start down-scaling proportionally
-		auxScaleHead.set(0, Math.min(auxScaleHead.y(), 1f) );
-		auxScaleHead.set(2, auxScaleHead.x() );
+		auxScaleHead.x = Math.min(auxScaleHead.y, 1f);
+		auxScaleHead.z = auxScaleHead.x;
 
-		auxHeadBase.set(0, base.x());
-		auxHeadBase.set(1, base.y());
-		auxHeadBase.set(2, base.z());
-		auxHeadBase.plusAssign( vector.times(scale * (1f-headPosRatio)) );
+		auxHeadBase.set( vector ).mulAdd(scale * (1f-headPosRatio), base);
 	}
 
 	/** clones the given 'v' into this vector, and updates all necessary aux attribs */

@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -32,7 +32,7 @@ package de.mpicbg.ulman.simviewer.util;
 import java.util.Locale;
 import java.util.Scanner;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import de.mpicbg.ulman.simviewer.DisplayScene;
 import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
@@ -129,23 +129,22 @@ public class NetMessagesProcessor
 
 		//now, point by point is reported
 		final Point p = new Point();
-		int ID = 0;
 
 		for (int n=0; n < N; ++n)
 		{
 			//extract the point ID
-			ID = s.nextInt();
+			int ID = s.nextInt();
 
 			//now read and save coordinates
 			int d=0;
-			for (; d < D && d < 3; ++d) p.centre.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) p.centre.setComponent(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 			//NB: all points in the same message (in this function call) are of the same dimensionality
 
-			p.radius.set(0, s.nextFloat());
-			p.radius.set(1, p.radius.x());
-			p.radius.set(2, p.radius.x());
+			p.radius.x = s.nextFloat();
+			p.radius.y = p.radius.x;
+			p.radius.z = p.radius.x;
 			if (oldV1colors) readV1Color(s,p.colorRGB);
 			else             readV2Color(s,p.colorRGB);
 
@@ -189,22 +188,21 @@ public class NetMessagesProcessor
 
 		//now, point pair by pair is reported
 		final Line l = new Line();
-		int ID = 0;
 
 		for (int n=0; n < N; ++n)
 		{
 			//extract the point ID
-			ID = s.nextInt();
+			int ID = s.nextInt();
 
 			//now read the first in the pair and save coordinates
 			int d=0;
-			for (; d < D && d < 3; ++d) l.base.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) l.base.setComponent(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
 			//now read the second in the pair and save sizes
 			d=0;
-			for (; d < D && d < 3; ++d) l.vector.set(d, s.nextFloat() - l.base.get(d));
+			for (; d < D && d < 3; ++d) l.vector.setComponent(d, s.nextFloat() - l.base.get(d));
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
@@ -251,22 +249,21 @@ public class NetMessagesProcessor
 
 		//now, point pair by pair is reported
 		final Vector v = new Vector();
-		int ID = 0;
 
 		for (int n=0; n < N; ++n)
 		{
 			//extract the point ID
-			ID = s.nextInt();
+			int ID = s.nextInt();
 
 			//now read the first in the pair and save coordinates
 			int d=0;
-			for (; d < D && d < 3; ++d) v.base.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) v.base.setComponent(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
 			//now read the second in the pair and save sizes
 			d=0;
-			for (; d < D && d < 3; ++d) v.vector.set(d, s.nextFloat());
+			for (; d < D && d < 3; ++d) v.vector.setComponent(d, s.nextFloat());
 			//read possibly remaining coordinates (for which we have no room to store them)
 			for (; d < D; ++d) s.nextFloat();
 
@@ -320,53 +317,53 @@ public class NetMessagesProcessor
 
 
 	private
-	void readV1Color(final Scanner s, final GLVector color)
+	void readV1Color(final Scanner s, final Vector3f color)
 	{
 		final int colorIndex = s.nextInt();
 		switch (colorIndex)
 		{
 		case 1:
-			color.set(0, 1.0f);
-			color.set(1, 0.0f);
-			color.set(2, 0.0f);
+			color.x = 1.0f;
+			color.y = 0.0f;
+			color.z = 0.0f;
 			break;
 		case 2:
-			color.set(0, 0.0f);
-			color.set(1, 1.0f);
-			color.set(2, 0.0f);
+			color.x = 0.0f;
+			color.y = 1.0f;
+			color.z = 0.0f;
 			break;
 		case 3:
-			color.set(0, 0.2f);
-			color.set(1, 0.4f);
-			color.set(2, 1.0f);
+			color.x = 0.2f;
+			color.y = 0.4f;
+			color.z = 1.0f;
 			break;
 		case 4:
-			color.set(0, 0.0f);
-			color.set(1, 1.0f);
-			color.set(2, 1.0f);
+			color.x = 0.0f;
+			color.y = 1.0f;
+			color.z = 1.0f;
 			break;
 		case 5:
-			color.set(0, 1.0f);
-			color.set(1, 0.0f);
-			color.set(2, 1.0f);
+			color.x = 1.0f;
+			color.y = 0.0f;
+			color.z = 1.0f;
 			break;
 		case 6:
-			color.set(0, 1.0f);
-			color.set(1, 1.0f);
-			color.set(2, 0.0f);
+			color.x = 1.0f;
+			color.y = 1.0f;
+			color.z = 0.0f;
 			break;
 		default:
-			color.set(0, 1.0f);
-			color.set(1, 1.0f);
-			color.set(2, 1.0f);
+			color.x = 1.0f;
+			color.y = 1.0f;
+			color.z = 1.0f;
 		}
 	}
 
 	private
-	void readV2Color(final Scanner s, final GLVector color)
+	void readV2Color(final Scanner s, final Vector3f color)
 	{
-		color.set(0, s.nextFloat());
-		color.set(1, s.nextFloat());
-		color.set(2, s.nextFloat());
+		color.x = s.nextFloat();
+		color.y = s.nextFloat();
+		color.z = s.nextFloat();
 	}
 }
