@@ -1,10 +1,39 @@
+/*
+BSD 2-Clause License
+
+Copyright (c) 2019, Vladimír Ulman
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 package de.mpicbg.ulman.simviewer;
 
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import de.mpicbg.ulman.simviewer.aux.Point;
+import de.mpicbg.ulman.simviewer.elements.Point;
 
 /**
  * Operates on a command line and recognizes a list of commands, try
@@ -63,12 +92,13 @@ public class CommandFromCLI implements Runnable
 			}
 		}
 		catch (IOException e) {
-			System.out.println("Key listener: Error reading the console.");
+			System.out.println("Key listener stopped, error reading the console: "+e.getMessage());
 			e.printStackTrace();
 		}
 		catch (InterruptedException e) {
-			System.out.println("Key listener: Interrupted and Stopped.");
+			System.out.println("Key listener interrupted: "+e.getMessage());
 		}
+		System.out.println("Key listener: Stopped.");
 	}
 
 
@@ -88,9 +118,9 @@ public class CommandFromCLI implements Runnable
 
 			System.out.println("A - Toggles display of the axes in the scene centre");
 			System.out.println("B - Toggles display of the scene border");
+			System.out.println("R - Resizes the scene around its current content");
 			System.out.println("I - Toggles between front/back/both/none ramp lights");
-			System.out.println("H - Toggles on/off of camera-attached lights");
-			System.out.println("r,R - Asks Scenery to re-render only-update-signalling/all objects");
+			System.out.println("1,2 - Dims/Brightens the ramp lights");
 			System.out.println("s - Saves the current content as a screenshot image");
 			System.out.println("S - Toggles automatic saving of screenshots (always after vectors update)");
 			System.out.println();
@@ -101,7 +131,7 @@ public class CommandFromCLI implements Runnable
 			System.out.println("D - Toggle \"garbage collection\" of old/not-recently-updated objects");
 			System.out.println();
 
-			System.out.println("c,C - Toggles display of the cell/general-debug spheres (shape)");
+			System.out.println("c,C - Toggles display of the cell/general-debug points (shape)");
 			System.out.println("l,L - Toggles display of the cell/general-debug lines");
 			System.out.println("f,F - Toggles display of the cell/general-debug vectors (forces)");
 			System.out.println("g,G - Toggles display of the cell-debug/general-debug");
@@ -123,11 +153,18 @@ public class CommandFromCLI implements Runnable
 		case 'B':
 			System.out.println("Scene border displayed: "+scene.ToggleDisplaySceneBorder());
 			break;
+		case 'R':
+			System.out.println("Scene offset and size will be resized.");
+			scene.ResizeScene();
+			break;
 		case 'I':
 			System.out.println("Current ramp lights: "+scene.ToggleFixedLights());
 			break;
-		case 'H':
-			System.out.println("Current head lights: "+scene.ToggleHeadLights());
+		case '1':
+			System.out.println("Current ramp lights intensity: "+scene.DecreaseFixedLightsIntensity());
+			break;
+		case '2':
+			System.out.println("Current ramp lights intensity: "+scene.IncreaseFixedLightsIntensity());
 			break;
 
 		case 'P':
@@ -148,7 +185,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'c':
-			System.out.println("Cell spheres displayed: "+scene.ToggleDisplayCellSpheres());
+			System.out.println("Cell points displayed: "+scene.ToggleDisplayCellSpheres());
 			break;
 		case 'l':
 			System.out.println("Cell lines displayed: "+scene.ToggleDisplayCellLines());
@@ -158,7 +195,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'C':
-			System.out.println("General debug spheres displayed: "+scene.ToggleDisplayGeneralDebugSpheres());
+			System.out.println("General debug points displayed: "+scene.ToggleDisplayGeneralDebugSpheres());
 			break;
 		case 'L':
 			System.out.println("General debug lines displayed: "+scene.ToggleDisplayGeneralDebugLines());
@@ -192,14 +229,6 @@ public class CommandFromCLI implements Runnable
 			System.out.println("Front faces NOT displayed");
 			break;
 
-		case 'r':
-			scene.scene.updateWorld(true, false);
-			System.out.println("Scenery refreshed (only those that flag 'update needed')");
-			break;
-		case 'R':
-			scene.scene.updateWorld(true, true);
-			System.out.println("Scenery refreshed (forcily everyone)");
-			break;
 		case 's':
 			scene.saveNextScreenshot();
 			System.out.println("Current content (screenshot) just saved into a file");
@@ -268,9 +297,7 @@ public class CommandFromCLI implements Runnable
 			break;
 
 		case 'q':
-			scene.stop();
-			//don't wait for GUI to tell me to stop
-			throw new InterruptedException("Key listener: Stopping myself now.");
+			throw new InterruptedException("User requested exit.");
 		default:
 			if (key != '\n') //do not respond to Enter keystrokes
 				System.out.println("Not recognized command, no action taken");
@@ -290,32 +317,31 @@ public class CommandFromCLI implements Runnable
 		final float zCentre  = scene.sceneOffset[2] + 0.5f*scene.sceneSize[2];
 
 		final Point c = new Point();
-		int ID = 0;
 
 		for (int y=0; y < 5; ++y)
 		for (int x=0; x < 5; ++x)
 		{
 			//if (x != 2 && y != 2)
 			{
-				ID = (x+10*y +1) << 17; //cell ID
+				int ID = (x+10*y +1) << 17; //cell ID
 				ID++;                   //1st element of this cell
-				c.centre.set(0, xCentre + xStep*(x-2.0f) -2.0f);
-				c.centre.set(1, yCentre + yStep*(y-2.0f));
-				c.centre.set(2, zCentre - 1.0f);
-				c.radius.set(0, 3.0f);
-				c.radius.set(1, 3.0f);
-				c.radius.set(2, 3.0f);
-				c.color = 2;
+				c.centre.x = xCentre + xStep*(x-2.0f) -2.0f;
+				c.centre.y = yCentre + yStep*(y-2.0f);
+				c.centre.z = zCentre - 1.0f;
+				c.radius.x = 3.0f;
+				c.radius.y = 3.0f;
+				c.radius.z = 3.0f;
+				c.colorRGB.y = 0.2f;
 				scene.addUpdateOrRemovePoint(ID,c);
 
 				ID++;                   //2nd element of this cell
-				c.centre.set(0, xCentre + xStep*(x-2.0f) +2.0f);
-				c.centre.set(1, yCentre + yStep*(y-2.0f));
-				c.centre.set(2, zCentre + 1.0f);
-				c.radius.set(0, 3.0f);
-				c.radius.set(1, 3.0f);
-				c.radius.set(2, 3.0f);
-				c.color = 3;
+				c.centre.x = xCentre + xStep*(x-2.0f) +2.0f;
+				c.centre.y = yCentre + yStep*(y-2.0f);
+				c.centre.z = zCentre + 1.0f;
+				c.radius.x = 3.0f;
+				c.radius.y = 3.0f;
+				c.radius.z = 3.0f;
+				c.colorRGB.y = 0.9f;
 				scene.addUpdateOrRemovePoint(ID,c);
 			}
 		}

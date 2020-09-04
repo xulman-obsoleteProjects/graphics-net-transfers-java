@@ -1,10 +1,39 @@
+/**
+BSD 2-Clause License
+
+Copyright (c) 2019, Vladimír Ulman
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 package de.mpicbg.ulman.simviewer;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import de.mpicbg.ulman.simviewer.aux.NetMessagesProcessor;
+import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
 
 /**
  * Operates on a network socket and listens for incoming messages.
@@ -78,13 +107,13 @@ public class CommandFromNetwork implements Runnable
 			}
 		}
 		catch (ZMQException e) {
-			System.out.println("Network listener: Crashed with ZeroMQ error: " + e.getMessage());
+			System.out.println("Network listener crashed with ZeroMQ error: " + e.getMessage());
 		}
 		catch (InterruptedException e) {
-			System.out.println("Network listener: Interrupted.");
+			System.out.println("Network listener interrupted: "+e.getMessage());
 		}
 		catch (Exception e) {
-			System.out.println("Network listener: Error: " + e.getMessage());
+			System.out.println("Network listener stopped, error: " + e.getMessage());
 			e.printStackTrace();
 		}
 		finally {
