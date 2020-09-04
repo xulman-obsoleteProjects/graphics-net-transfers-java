@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,33 +29,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer.elements;
 
-import cleargl.GLVector;
 import graphics.scenery.Node;
+import org.joml.Vector3f;
 
 /** Corresponds to one element that simulator's DrawLine() can send;
     graphically, line is essentially a vector without an arrow head.
     The class governs all necessary pieces of information to display
-    the line, and the Scenery's Nodes are pointed inside this class
+    the line, and the SciView's Nodes are pointed inside this class
     to (re)fetch the actual display data/instructions. */
 public class Line extends Vector
 {
-	public Line()             { super(); }    //without connection to Scenery
-	public Line(final Node l) { super(l); }   //  with  connection to Scenery
+	public Line()             { super(); }    //without connection to SciView
+	public Line(final Node l) { super(l); }   //  with  connection to SciView
 
 	/** converts a line, given via its end positions, into a vector-like representation */
-	public void reset(final GLVector posA, final GLVector posB, final GLVector rgbColor)
+	public void reset(final Vector3f posA, final Vector3f posB, final Vector3f rgbColor)
 	{
 		//essentially supplies the functionality of the Vector::update(),
 		//difference is in the semantics of the input
-		base.set(0, posA.x());
-		base.set(1, posA.y());
-		base.set(2, posA.z());
-		vector.set(0, posB.x()-posA.x());
-		vector.set(1, posB.y()-posA.y());
-		vector.set(2, posB.z()-posA.z());
-		colorRGB.set(0, rgbColor.x());
-		colorRGB.set(1, rgbColor.y());
-		colorRGB.set(2, rgbColor.z());
+		base.set( posA );
+		vector.set( posB ).sub( posA );
+		colorRGB.set( rgbColor );
 
 		//also update the vector's auxScale:
 		applyScale(1f);

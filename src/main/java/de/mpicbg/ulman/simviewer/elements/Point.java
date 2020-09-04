@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,39 +29,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer.elements;
 
-import cleargl.GLVector;
 import graphics.scenery.Node;
+import org.joml.Vector3f;
 
 /** Corresponds to one element that simulator's DrawPoint() can send.
     The class governs all necessary pieces of information to display
-    a point/sphere, and the Scenery's Nodes are pointed inside this class
+    a point/sphere, and the SciView's Nodes are pointed inside this class
     to (re)fetch the actual display data/instructions. */
 public class Point
 {
-	public Point()             { node = null; }   //without connection to Scenery
-	public Point(final Node p) { node = p; }      //  with  connection to Scenery
+	public Point()             { node = null; }   //without connection to SciView
+	public Point(final Node p) { node = p; }      //  with  connection to SciView
 
+	// ------- main defining attributes -------
 	public final Node node;
-	public final GLVector centre = new GLVector(0.f,3);
-	public final GLVector radius = new GLVector(0.f,3);
+	public final Vector3f centre = new Vector3f(0); //NB: zeros all three elems
+	public final Vector3f radius = new Vector3f(0);
 
 	/** object's color in the RGB format */
-	public final GLVector colorRGB = new GLVector(1.0f,0.2f,0.2f,1.0f);
-	public GLVector getColorRGB() { return colorRGB; }
+	public final Vector3f colorRGB = new Vector3f(1.0f,0.2f,0.2f);
+	public Vector3f getColorRGB() { return colorRGB; }
 
 	public int lastSeenTick = 0;
 
 	public void update(final Point p)
 	{
-		centre.set(0, p.centre.x());
-		centre.set(1, p.centre.y());
-		centre.set(2, p.centre.z());
-		radius.set(0, p.radius.x());
-		radius.set(1, p.radius.y());
-		radius.set(2, p.radius.z());
-
-		colorRGB.set(0, p.colorRGB.x());
-		colorRGB.set(1, p.colorRGB.y());
-		colorRGB.set(2, p.colorRGB.z());
+		centre.set( p.centre );
+		radius.set( p.radius );
+		colorRGB.set( p.colorRGB );
 	}
 }
