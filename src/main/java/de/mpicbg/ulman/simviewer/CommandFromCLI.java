@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -317,32 +317,31 @@ public class CommandFromCLI implements Runnable
 		final float zCentre  = scene.sceneOffset[2] + 0.5f*scene.sceneSize[2];
 
 		final Point c = new Point();
-		int ID = 0;
 
 		for (int y=0; y < 5; ++y)
 		for (int x=0; x < 5; ++x)
 		{
 			//if (x != 2 && y != 2)
 			{
-				ID = (x+10*y +1) << 17; //cell ID
+				int ID = (x+10*y +1) << 17; //cell ID
 				ID++;                   //1st element of this cell
-				c.centre.set(0, xCentre + xStep*(x-2.0f) -2.0f);
-				c.centre.set(1, yCentre + yStep*(y-2.0f));
-				c.centre.set(2, zCentre - 1.0f);
-				c.radius.set(0, 3.0f);
-				c.radius.set(1, 3.0f);
-				c.radius.set(2, 3.0f);
-				c.colorRGB.set(1,0.2f);
+				c.centre.x = xCentre + xStep*(x-2.0f) -2.0f;
+				c.centre.y = yCentre + yStep*(y-2.0f);
+				c.centre.z = zCentre - 1.0f;
+				c.radius.x = 3.0f;
+				c.radius.y = 3.0f;
+				c.radius.z = 3.0f;
+				c.colorRGB.y = 0.2f;
 				scene.addUpdateOrRemovePoint(ID,c);
 
 				ID++;                   //2nd element of this cell
-				c.centre.set(0, xCentre + xStep*(x-2.0f) +2.0f);
-				c.centre.set(1, yCentre + yStep*(y-2.0f));
-				c.centre.set(2, zCentre + 1.0f);
-				c.radius.set(0, 3.0f);
-				c.radius.set(1, 3.0f);
-				c.radius.set(2, 3.0f);
-				c.colorRGB.set(1,0.9f);
+				c.centre.x = xCentre + xStep*(x-2.0f) +2.0f;
+				c.centre.y = yCentre + yStep*(y-2.0f);
+				c.centre.z = zCentre + 1.0f;
+				c.radius.x = 3.0f;
+				c.radius.y = 3.0f;
+				c.radius.z = 3.0f;
+				c.colorRGB.y = 0.9f;
 				scene.addUpdateOrRemovePoint(ID,c);
 			}
 		}
