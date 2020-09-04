@@ -1,4 +1,4 @@
-/**
+/*
 BSD 2-Clause License
 
 Copyright (c) 2019, Vladimír Ulman
@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import graphics.scenery.*;
 import sc.iview.SciView;
 import java.util.Iterator;
@@ -57,8 +57,8 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		//(re)init the colors -- the material lookup table
 		final Material sampleMat = new Material();
 		sampleMat.setCullingMode(Material.CullingMode.None);
-		sampleMat.setAmbient(  new GLVector(1.0f, 1.0f, 1.0f) );
-		sampleMat.setSpecular( new GLVector(1.0f, 1.0f, 1.0f) );
+		sampleMat.setAmbient(  new Vector3f(1.0f, 1.0f, 1.0f) );
+		sampleMat.setSpecular( new Vector3f(1.0f, 1.0f, 1.0f) );
 
 		materials = new Palette(8);
 		materials.setMaterialsAlike(sampleMat);
@@ -88,7 +88,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 
 		//negative color is an agreed signal to remove the point
 		//also, get rid of a point whose radius is "impossible"
-		if (p.colorRGB.x() < 0 || p.radius.x() < 0.0f)
+		if (p.colorRGB.x < 0 || p.radius.x < 0.0f)
 		{
 			if (n != null)
 			{
@@ -132,7 +132,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		Line n = lineNodes.get(ID);
 
 		//negative color is an agreed signal to remove the line
-		if (l.colorRGB.x() < 0)
+		if (l.colorRGB.x < 0)
 		{
 			if (n != null)
 			{
@@ -179,7 +179,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		VectorSH n = vectorNodes.get(ID);
 
 		//negative color is an agreed signal to remove the vector
-		if (v.colorRGB.x() < 0)
+		if (v.colorRGB.x < 0)
 		{
 			if (n != null)
 			{
