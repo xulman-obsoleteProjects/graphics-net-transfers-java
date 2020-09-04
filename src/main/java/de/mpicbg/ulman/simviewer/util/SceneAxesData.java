@@ -1,10 +1,10 @@
 package de.mpicbg.ulman.simviewer.util;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
+import org.joml.Quaternionf;
 import graphics.scenery.Node;
 import graphics.scenery.Cylinder;
 import graphics.scenery.Material;
-import de.mpicbg.ulman.simviewer.DisplayScene;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,9 +15,9 @@ import java.util.List;
 public class SceneAxesData
 {
 	/** data with position to be shared with the scenery */
-	final GLVector position = new GLVector(0.f,3);
+	final Vector3f position = new Vector3f(0);
 	/** data with scale (size) to be shared with the scenery */
-	final GLVector scale    = new GLVector(1.f,3);
+	final Vector3f scale    = new Vector3f(1);
 
 	/** the scenery's nodes that actually make up the orientation compass */
 	final Node[] axesData = new Node[3];
@@ -69,7 +69,7 @@ public class SceneAxesData
 	private
 	void allocate()
 	{
-		scale.set(1,barLength);
+		scale.y = barLength;
 
 		for (int i=0; i < 3; ++i)
 		{
@@ -79,8 +79,9 @@ public class SceneAxesData
 			axesData[i].setScale(scale);
 		}
 
-		DisplayScene.ReOrientNode(axesData[0],DisplayScene.defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
-		DisplayScene.ReOrientNode(axesData[2],DisplayScene.defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
+		final float halfPI = (float)(0.5*Math.PI);
+		axesData[0].setRotation( new Quaternionf().rotateXYZ(0,0,-halfPI).normalize() );
+		axesData[2].setRotation( new Quaternionf().rotateXYZ(halfPI,0,0).normalize() );
 	}
 
 
@@ -92,9 +93,9 @@ public class SceneAxesData
 		axesData[2].setName("compass axis: Z");
 
 		//place all axes into the scene centre
-		position.set(0, sceneOffset[0] + 0.5f*sceneSize[0]);
-		position.set(1, sceneOffset[1] + 0.5f*sceneSize[1]);
-		position.set(2, sceneOffset[2] + 0.5f*sceneSize[2]);
+		position.set(sceneOffset[0] + 0.5f*sceneSize[0],
+		             sceneOffset[1] + 0.5f*sceneSize[1],
+		             sceneOffset[2] + 0.5f*sceneSize[2]);
 
 		for (Node a : axesData)
 			a.setNeedsUpdate(true);
@@ -117,9 +118,9 @@ public class SceneAxesData
 		for (Node a : axesData)
 			a.setMaterial(mat);
 	}
-	public static final GLVector axisRedColor   = new GLVector(1.0f, 0.0f, 0.0f, 1.0f);
-	public static final GLVector axisGreenColor = new GLVector(0.0f, 1.0f, 0.0f, 1.0f);
-	public static final GLVector axisBlueColor  = new GLVector(0.0f, 0.0f, 1.0f, 1.0f);
+	public static final Vector3f axisRedColor   = new Vector3f(1.0f, 0.0f, 0.0f);
+	public static final Vector3f axisGreenColor = new Vector3f(0.0f, 1.0f, 0.0f);
+	public static final Vector3f axisBlueColor  = new Vector3f(0.0f, 0.0f, 1.0f);
 
 
 	//typically when non-instancing

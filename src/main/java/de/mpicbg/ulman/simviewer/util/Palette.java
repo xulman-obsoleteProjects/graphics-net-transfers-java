@@ -1,7 +1,7 @@
 package de.mpicbg.ulman.simviewer.util;
 
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
 import graphics.scenery.Material;
 
 /**
@@ -37,9 +37,9 @@ public class Palette
 	}
 
 	/** returns a material of the color closest to the desired one */
-	public Material getMaterial(final GLVector rgbOrRgba)
+	public Material getMaterial(final Vector3f rgb)
 	{
-		return materials[ rgbToIndex(rgbOrRgba.x(),rgbOrRgba.y(),rgbOrRgba.z()) ];
+		return materials[ rgbToIndex(rgb.x,rgb.y,rgb.z) ];
 	}
 
 	/** returns a material of the color closest to the desired color from
@@ -130,6 +130,9 @@ public class Palette
 	protected int rgbToIndex(final float[] rgb)
 	{ return rgbToIndex(rgb[0],rgb[1],rgb[2]); }
 
+	protected int rgbToIndex(final Vector3f rgb)
+	{ return rgbToIndex(rgb.x,rgb.y,rgb.z); }
+
 	/** returns index to materials array that is closest to the given color */
 	protected int rgbToIndex(final float r,final float g,final float b)
 	{
@@ -158,7 +161,7 @@ public class Palette
 			//DEBUG// System.out.println(i+": "+rgb[0]+","+rgb[1]+","+rgb[2]);
 
 			materials[i] = new Material();
-			materials[i].setDiffuse( new GLVector(rgb[0],rgb[1],rgb[2]) );
+			materials[i].setDiffuse( new Vector3f(rgb[0],rgb[1],rgb[2]) );
 		}
 	}
 }

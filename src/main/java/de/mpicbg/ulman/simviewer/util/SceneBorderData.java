@@ -1,10 +1,10 @@
 package de.mpicbg.ulman.simviewer.util;
 
-import cleargl.GLVector;
+import org.joml.Vector3f;
+import org.joml.Quaternionf;
 import graphics.scenery.Node;
 import graphics.scenery.Cylinder;
 import graphics.scenery.Material;
-import de.mpicbg.ulman.simviewer.DisplayScene;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,9 +15,9 @@ import java.util.List;
 public class SceneBorderData
 {
 	/** data with position to be shared with the scenery */
-	final GLVector[] positions = new GLVector[12];
+	final Vector3f[] positions = new Vector3f[12];
 	/** data with scales (sizes) to be shared with the scenery */
-	final GLVector[] scales    = new GLVector[12];
+	final Vector3f[] scales    = new Vector3f[12];
 
 	/** the scenery's nodes that actually make up the border frame */
 	final Node[] borderData = new Node[12];
@@ -58,18 +58,19 @@ public class SceneBorderData
 	{
 		for (int i=0; i < 12; ++i)
 		{
-			positions[i]  = new GLVector(0.f,3);
-			scales[i]     = new GLVector(1.f,3);
+			positions[i]  = new Vector3f(0);
+			scales[i]     = new Vector3f(1);
 			borderData[i] = new Cylinder(barRadius,1.0f,4);
 
 			borderData[i].setPosition(positions[i]);
 			borderData[i].setScale(scales[i]);
 		}
 
+		final float halfPI = (float)(0.5*Math.PI);
 		for (int i=0; i < 4; ++i)
-			DisplayScene.ReOrientNode(borderData[i],DisplayScene.defaultNormalizedUpVector,new GLVector(1.0f,0.0f,0.0f));
+			borderData[i].setRotation( new Quaternionf().rotateXYZ(0,0,-halfPI).normalize() );
 		for (int i=8; i < 12; ++i)
-			DisplayScene.ReOrientNode(borderData[i],DisplayScene.defaultNormalizedUpVector,new GLVector(0.0f,0.0f,1.0f));
+			borderData[i].setRotation( new Quaternionf().rotateXYZ(halfPI,0,0).normalize() );
 	}
 
 
@@ -80,47 +81,41 @@ public class SceneBorderData
 		for (int i=0; i < 4; ++i)
 		{
 			borderData[i].setName("left-right bar (x axis)");
-			scales[i].set(1,sceneSize[0]);
-			positions[i].set(0, sceneOffset[0]);
-			positions[i].set(1, sceneOffset[1]);
-			positions[i].set(2, sceneOffset[2]);
+			scales[i].y = sceneSize[0];
+			positions[i].set(sceneOffset[0], sceneOffset[1], sceneOffset[2]);
 		}
 
-		final GLVector dx = new GLVector(sceneSize[0],0.f,0.f);
-		final GLVector dy = new GLVector(0.f,sceneSize[1],0.f);
-		final GLVector dz = new GLVector(0.f,0.f,sceneSize[2]);
+		final Vector3f dx = new Vector3f(sceneSize[0],0.f,0.f);
+		final Vector3f dy = new Vector3f(0.f,sceneSize[1],0.f);
+		final Vector3f dz = new Vector3f(0.f,0.f,sceneSize[2]);
 
-		positions[1].plusAssign(dy);
-		positions[2].plusAssign(dy.plus(dz));
-		positions[3].plusAssign(dz);
+		positions[1].add(dy);
+		positions[2].add(dy).add(dz);
+		positions[3].add(dz);
 
 		//y-axes aligned
 		for (int i=4; i < 8; ++i)
 		{
 			borderData[i].setName("bottom-up bar (y axis)");
-			scales[i].set(1,sceneSize[1]);
-			positions[i].set(0, sceneOffset[0]);
-			positions[i].set(1, sceneOffset[1]);
-			positions[i].set(2, sceneOffset[2]);
+			scales[i].y = sceneSize[1];
+			positions[i].set(sceneOffset[0], sceneOffset[1], sceneOffset[2]);
 		}
 
-		positions[5].plusAssign(dx);
-		positions[6].plusAssign(dx.plus(dz));
-		positions[7].plusAssign(dz);
+		positions[5].add(dx);
+		positions[6].add(dx).add(dz);
+		positions[7].add(dz);
 
 		//z-axes aligned
 		for (int i=8; i < 12; ++i)
 		{
 			borderData[i].setName("front-rear bar (z axis)");
-			scales[i].set(1,sceneSize[2]);
-			positions[i].set(0, sceneOffset[0]);
-			positions[i].set(1, sceneOffset[1]);
-			positions[i].set(2, sceneOffset[2]);
+			scales[i].y = sceneSize[2];
+			positions[i].set(sceneOffset[0], sceneOffset[1], sceneOffset[2]);
 		}
 
-		positions[ 9].plusAssign(dx);
-		positions[10].plusAssign(dx.plus(dy));
-		positions[11].plusAssign(dy);
+		positions[ 9].add(dx);
+		positions[10].add(dx).add(dy);
+		positions[11].add(dy);
 
 		for (Node b : borderData)
 			b.setNeedsUpdate(true);
@@ -144,8 +139,8 @@ public class SceneBorderData
 		for (Node b : borderData)
 			b.setMaterial(mat);
 	}
-	public static final GLVector borderRedColor  = new GLVector(1.0f, 0.0f, 0.0f, 1.0f);
-	public static final GLVector borderBlueColor = new GLVector(0.0f, 0.0f, 1.0f, 1.0f);
+	public static final Vector3f borderRedColor  = new Vector3f(1.0f, 0.0f, 0.0f);
+	public static final Vector3f borderBlueColor = new Vector3f(0.0f, 0.0f, 1.0f);
 
 
 	//typically when non-instancing
