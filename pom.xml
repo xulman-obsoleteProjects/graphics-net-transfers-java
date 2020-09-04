@@ -11,7 +11,7 @@
 
 	<groupId>de.mpicbg.ulman</groupId>
 	<artifactId>SimViewer</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.2-SNAPSHOT</version>
 
 	<organization>
 		<name>MPI-CBG</name>
