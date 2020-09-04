@@ -162,8 +162,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
+		DisplayScene.rotateNodeToDir(n.node, l.vector);
 		this.nodeSetNeedsUpdate(n.node);
 	 }
 	}
@@ -219,8 +218,7 @@ public class DisplaySceneNoInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		DisplayScene.rotateNodeToDir(n.node, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
 		//NB: this triggers n.nodeHead.updateWorld() automatically
 		//NB: but does not trigger the update of the vector shaft

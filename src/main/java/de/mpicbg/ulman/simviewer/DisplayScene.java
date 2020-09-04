@@ -157,9 +157,6 @@ public class DisplayScene
 
 	/** fixed lookup table with colors, in the form of materials... */
 	Palette materials;
-
-	/** fixed reference "up" vector used mainly in conjunction with ReOrientNode() */
-	public static final GLVector defaultNormalizedUpVector = new GLVector(0.0f,1.0f,0.0f);
 	//----------------------------------------------------------------------------
 
 	void requestWorldUpdate(boolean force)
@@ -1045,56 +1042,13 @@ public class DisplayScene
 	//----------------------------------------------------------------------------
 
 
-	/** Rotates the node such that its orientation (whatever it is for the node, e.g.
-	    the axis of rotational symmetry in a cylinder) given with _normalized_
-	    currentNormalizedOrientVec will match the new orientation newOrientVec. */
 	public static
-	void ReOrientNode(final Node node, final GLVector currentNormalizedOrientVec,
-	                  final GLVector newOrientVec)
+	void rotateNodeToDir(final Node node, final Vector3f newDir)
 	{
-		//plan: vector/cross product of the initial object's orientation and the new orientation,
-		//and rotate by angle that is taken from the scalar product of the two
-
-		//the rotate angle
-		final float rotAngle = (float)Math.acos(currentNormalizedOrientVec.times(newOrientVec.getNormalized()));
-
-		//for now, the second vector for the cross product
-		GLVector tmpVec = newOrientVec;
-
-		//two special cases when the two orientations are (nearly) colinear:
-		//
-		//a) the same direction -> nothing to do (don't even update the currentNormalizedOrientVec)
-		if (Math.abs(rotAngle) < 0.01f) return;
-		//
-		//b) the opposite direction -> need to "flip"
-		if (Math.abs(rotAngle-Math.PI) < 0.01f)
-		{
-			//define non-colinear helping vector, e.g. take a perpendicular one
-			tmpVec = new GLVector(-newOrientVec.y(), newOrientVec.x(), 0.0f);
-		}
-
-		//axis along which to perform the rotation
-		tmpVec = currentNormalizedOrientVec.cross(tmpVec).normalize();
-		node.getRotation().rotateByAngleNormalAxis(rotAngle, tmpVec.x(),tmpVec.y(),tmpVec.z());
-
-		//System.out.println("rot axis=("+tmpVec.x()+","+tmpVec.y()+","+tmpVec.z()
-		//                   +"), rot angle="+rotAngle+" rad");
+		node.getRotation().identity().rotateTo(initialDir, newDir);
 	}
 
-	/** Calls the ReOrientNode() before the normalized variant of newOrientVec
-	    will be stored into the currentNormalizedOrientVec. */
-	public static
-	void ReOrientNodeAndSaveNewNormalizedOrientation(final Node node,
-	                  final GLVector currentNormalizedOrientVec,
-	                  final GLVector newOrientVec)
-	{
-		ReOrientNode(node, currentNormalizedOrientVec, newOrientVec);
-
-		//update the current orientation
-		currentNormalizedOrientVec.minusAssign(currentNormalizedOrientVec);
-		currentNormalizedOrientVec.plusAssign(newOrientVec);
-		currentNormalizedOrientVec.normalize();
-	}
+	private static final Vector3f initialDir = new Vector3f(0,1,0);
 	//----------------------------------------------------------------------------
 
 

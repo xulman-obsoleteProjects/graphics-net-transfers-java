@@ -534,8 +534,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, l.vector);
+		DisplayScene.rotateNodeToDir(n.node, l.vector);
 		n.node.setNeedsUpdate(true);
 	 }
 	}
@@ -599,8 +598,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		n.lastSeenTick = tickCounter;
 
 		//finally, set the new absolute orientation
-		n.node.getRotation().setIdentity();
-		ReOrientNode(n.node, defaultNormalizedUpVector, v.vector);
+		DisplayScene.rotateNodeToDir(n.node, v.vector);
 		n.nodeHead.setRotation(n.node.getRotation());
 		n.node.setNeedsUpdate(true);
 		n.nodeHead.setNeedsUpdate(true);
