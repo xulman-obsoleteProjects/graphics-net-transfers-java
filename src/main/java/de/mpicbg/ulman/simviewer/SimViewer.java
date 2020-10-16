@@ -146,7 +146,7 @@ public class SimViewer implements Command
 		final CommandFromFlightRecorder cmdFR  = new CommandFromFlightRecorder(netMsgProcessor);
 
 		//the user-commands processor
-		final CommandFromCLI            cmdCLI = new CommandFromCLI(scene, initSequence);
+		final CommandFromCLI            cmdCLI = new CommandFromCLI(scene, initSequence.replaceAll("[^\\d\\w]",""));
 
 		//notes:
 		//cmdCLI interacts with the 'scene' directly for some of its functionalities, however,
