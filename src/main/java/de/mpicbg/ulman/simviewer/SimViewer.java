@@ -41,6 +41,9 @@ import sc.iview.SciView;
 import graphics.scenery.Light;
 import graphics.scenery.Node;
 
+import org.scijava.event.EventService;
+import sc.iview.event.NodeChangedEvent;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -59,6 +62,9 @@ public class SimViewer implements Command
 
 	@Parameter
 	private SciView sciView;
+
+	@Parameter
+	private EventService events;
 
 
 	//----------------------------------------------------------------------------
@@ -138,6 +144,9 @@ public class SimViewer implements Command
 		//populate the scene initially
 		scene.CreateDisplayAxes();
 		scene.CreateDisplaySceneBorder();
+
+		//sciView.requestPropEditorRefresh();
+		events.publish(new NodeChangedEvent(scene.sceneGlobalCoordCentre));
 
 		//start aux services:
 		//the shared, messages processor and its "wrapping classes"
