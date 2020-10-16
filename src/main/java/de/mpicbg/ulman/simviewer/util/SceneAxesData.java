@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.simviewer.util;
 
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.joml.Quaternionf;
 import graphics.scenery.Node;
 import graphics.scenery.Cylinder;
@@ -147,9 +148,9 @@ public class SceneAxesData
 		for (Node a : axesData)
 			a.setMaterial(mat);
 	}
-	public static final Vector3f axisRedColor   = new Vector3f(1.0f, 0.0f, 0.0f);
-	public static final Vector3f axisGreenColor = new Vector3f(0.0f, 1.0f, 0.0f);
-	public static final Vector3f axisBlueColor  = new Vector3f(0.0f, 0.0f, 1.0f);
+	public static final Vector4f axisRedColor   = new Vector4f(1.0f, 0.0f, 0.0f, 1.0f);
+	public static final Vector4f axisGreenColor = new Vector4f(0.0f, 1.0f, 0.0f, 1.0f);
+	public static final Vector4f axisBlueColor  = new Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
 
 
 	//typically when non-instancing

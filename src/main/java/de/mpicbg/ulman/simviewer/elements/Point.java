@@ -31,6 +31,7 @@ package de.mpicbg.ulman.simviewer.elements;
 
 import graphics.scenery.Node;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 /** Corresponds to one element that simulator's DrawPoint() can send.
     The class governs all necessary pieces of information to display
@@ -48,7 +49,16 @@ public class Point
 
 	/** object's color in the RGB format */
 	public final Vector3f colorRGB = new Vector3f(1.0f,0.2f,0.2f);
-	public Vector3f getColorRGB() { return colorRGB; }
+
+	/** object's "slave/dependent" color in the RGBA format for the full instancing */
+	private final Vector4f colorRGBA = new Vector4f(1.0f);
+	public Vector4f getColorRGBA()
+	{
+		colorRGBA.x = colorRGB.x;
+		colorRGBA.y = colorRGB.y;
+		colorRGBA.z = colorRGB.z;
+		return colorRGBA;
+	}
 
 	public int lastSeenTick = 0;
 

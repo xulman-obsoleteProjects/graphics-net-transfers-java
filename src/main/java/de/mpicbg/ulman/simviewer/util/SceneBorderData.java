@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.simviewer.util;
 
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.joml.Quaternionf;
 import graphics.scenery.Node;
 import graphics.scenery.Cylinder;
@@ -168,8 +169,8 @@ public class SceneBorderData
 		for (Node b : borderData)
 			b.setMaterial(mat);
 	}
-	public static final Vector3f borderRedColor  = new Vector3f(1.0f, 0.0f, 0.0f);
-	public static final Vector3f borderBlueColor = new Vector3f(0.0f, 0.0f, 1.0f);
+	public static final Vector4f borderRedColor  = new Vector4f(1.0f, 0.0f, 0.0f, 1.0f);
+	public static final Vector4f borderBlueColor = new Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
 
 
 	//typically when non-instancing

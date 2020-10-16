@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package de.mpicbg.ulman.simviewer;
 
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import graphics.scenery.*;
 import graphics.scenery.backends.ShaderType;
 import graphics.scenery.Material.CullingMode;
@@ -248,7 +249,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refPointNode.setMaterial(refMaterials[CATEGORY0_POINTS]);
 		refPointNode.getInstancedProperties().put("ModelMatrix", refPointNode::getModel);
 		if (fullInstancing)
-			refPointNode.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
+			refPointNode.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
 		refPointNode.setName("sphere master instance");
 		return refPointNode;
 	}
@@ -259,7 +260,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refLineNode.setMaterial(refMaterials[CATEGORY0_LINES]);
 		refLineNode.getInstancedProperties().put("ModelMatrix", refLineNode::getModel);
 		if (fullInstancing)
-			refLineNode.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
+			refLineNode.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
 		refLineNode.setName("line master instance");
 		return refLineNode;
 	}
@@ -270,7 +271,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		if (fullInstancing)
-			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
+			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
 		refVectorNode_Shaft.setName("vector shaft master instance");
 		return refVectorNode_Shaft;
 	}
@@ -281,7 +282,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		if (fullInstancing)
-			refVectorNode_Head.getInstancedProperties().put("Color", () -> new Vector3f(0.5f, 0.5f, 0.5f));
+			refVectorNode_Head.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
 		refVectorNode_Head.setName("vector head master instance");
 		return refVectorNode_Head;
 	}
@@ -470,7 +471,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
 			if (fullInstancing)
-				nn.getInstancedProperties().put("Color", n::getColorRGB);
+				nn.getInstancedProperties().put("Color", n::getColorRGBA);
 			nn.setParent(scene);
 
 			addToAppropriateMaster(ID,n);
@@ -521,7 +522,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			//spawn another instance
 			nn.getInstancedProperties().put("ModelMatrix", nn::getWorld);
 			if (fullInstancing)
-				nn.getInstancedProperties().put("Color", n::getColorRGB);
+				nn.getInstancedProperties().put("Color", n::getColorRGBA);
 			nn.setParent(scene);
 
 			addToAppropriateMaster(ID,n);
@@ -580,12 +581,12 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			//spawn another instances
 			ns.getInstancedProperties().put("ModelMatrix", ns::getWorld);
 			if (fullInstancing)
-				ns.getInstancedProperties().put("Color", n::getColorRGB);
+				ns.getInstancedProperties().put("Color", n::getColorRGBA);
 			ns.setParent(scene);
 
 			nh.getInstancedProperties().put("ModelMatrix", nh::getWorld);
 			if (fullInstancing)
-				nh.getInstancedProperties().put("Color", n::getColorRGB);
+				nh.getInstancedProperties().put("Color", n::getColorRGBA);
 			nh.setParent(scene);
 
 			addToAppropriateMaster(ID,n);
