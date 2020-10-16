@@ -79,9 +79,12 @@ public class DisplayScene
 		scene.setName("SimViewer");
 		sciView.addNode(scene);
 
-		scene.setBoundingBox(new OrientedBoundingBox(scene,
-			sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
-			sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
+		sceneGlobalCoordCentre = new Box();
+		sceneGlobalCoordCentre.setName("SimViewer's center");
+
+		adaptSceneBBoxAndCentreNode();
+		sciView.addNode(sceneGlobalCoordCentre);
+		//NB: added as a final op so that sciview shows the current state
 
 		//init the colors -- the material lookup table
 		final Material sampleMat = new Material();
@@ -102,6 +105,7 @@ public class DisplayScene
 		if (borderData != null) RemoveDisplaySceneBorder();
 
 		//remove the rest of the SimViewer, which is now only the remaining user's data...
+		sciView.deleteNode(sceneGlobalCoordCentre);
 		sciView.deleteNode(scene);
 	}
 
@@ -146,6 +150,7 @@ public class DisplayScene
 	/** short cut to the root Node underwhich all displayed objects should be hooked up,
 	    this one is typically hooked right under the this.sciView */
 	final Node scene;
+	final Node sceneGlobalCoordCentre;
 
 	/** 3D position of the scene, to position well the lights and camera */
 	final float[] sceneOffset;
@@ -185,6 +190,8 @@ public class DisplayScene
 	{
 		RepositionFixedLightsRamp(newDsFactor);
 		scene.setScale(new Vector3f(newDsFactor));
+		sceneGlobalCoordCentre.getPosition().mul(newDsFactor/DsFactor);
+		sceneGlobalCoordCentre.setNeedsUpdate(true);
 		DsFactor = newDsFactor;
 		requestWorldUpdate(false);
 	}
@@ -286,9 +293,8 @@ public class DisplayScene
 			sceneSize[d]   = sSize[d];
 		}
 
-		scene.setBoundingBox(new OrientedBoundingBox(scene,
-			sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
-			sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
+		adaptSceneBBoxAndCentreNode();
+		sceneGlobalCoordCentre.setNeedsUpdate(true);
 
 		fixedLightsState backupLightsState = fixedLightsChoosen;
 		RemoveFixedLightsRamp();
@@ -297,6 +303,20 @@ public class DisplayScene
 
 		if (borderData != null) borderData.shapeForThisScene(sceneOffset,sceneSize);
 		if ( axesData  != null)   axesData.shapeForThisScene(sceneOffset,sceneSize);
+	}
+
+	private
+	void adaptSceneBBoxAndCentreNode()
+	{
+		scene.setBoundingBox(new OrientedBoundingBox(scene,
+				sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
+				sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
+
+		sceneGlobalCoordCentre.setPosition(new float[]{
+				DsFactor * (sceneOffset[0] + 0.5f*sceneSize[0] -0.5f), //NB: subtract half of the box size
+				DsFactor * (sceneOffset[1] + 0.5f*sceneSize[1] -0.5f),
+				DsFactor * (sceneOffset[2] + 0.5f*sceneSize[2] -0.5f)
+		});
 	}
 	//----------------------------------------------------------------------------
 
