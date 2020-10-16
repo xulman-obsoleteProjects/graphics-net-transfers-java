@@ -111,7 +111,7 @@ public class SimViewer implements Command
 		log.info("SimViewer initializing");
 
 		//prepare the original SciView scene
-		disableFloorAndVisibleLights();
+		disableFloor();
 
 		//get the scene offset and "diagonal" (size)
 		final float[] sOffset = new float[] {minX,minY,minZ};
@@ -130,6 +130,7 @@ public class SimViewer implements Command
 		//setup our own lights
 		if (addOwnLights)
 		{
+			disableVisibleLights();
 			scene.CreateFixedLightsRamp();
 			scene.ToggleFixedLights();
 		}
@@ -219,7 +220,8 @@ public class SimViewer implements Command
 		}
 
 		//restore the original SciView scene
-		enableFloorAndDisabledLights();
+		enableFloor();
+		if (addOwnLights) enableDisabledLights();
 
 		log.info("SimViewer stopped");
 	}
@@ -229,11 +231,19 @@ public class SimViewer implements Command
 	private boolean floorOriginalVisibilityState = true;
 	private final List<Node> disabledLights = new ArrayList<>(10);
 
-	private void disableFloorAndVisibleLights()
+	private void disableFloor()
 	{
 		floorOriginalVisibilityState = sciView.getFloor().getVisible();
 		sciView.getFloor().setVisible(false);
+	}
 
+	private void enableFloor()
+	{
+		sciView.getFloor().setVisible(floorOriginalVisibilityState);
+	}
+
+	private void disableVisibleLights()
+	{
 		for (Node n : sciView.getAllSceneNodes())
 		{
 			//disable lights, that are enabled and that are not ours
@@ -248,7 +258,7 @@ public class SimViewer implements Command
 		for (Node n : disabledLights) { log.info("disabled light: "+n.getName()); }
 	}
 
-	private void enableFloorAndDisabledLights()
+	private void enableDisabledLights()
 	{
 		Iterator<Node> i = disabledLights.iterator();
 		while (i.hasNext())
@@ -256,8 +266,6 @@ public class SimViewer implements Command
 			i.next().setVisible(true);
 			i.remove();
 		}
-
-		sciView.getFloor().setVisible(floorOriginalVisibilityState);
 	}
 
 
