@@ -132,7 +132,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		//define a master instances for vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
-		refMaterials[CATEGORY0_VECTORSHAFTS].setDiffuse(new Vector3f(0.6f,0.6f,1.0f));
+		refMaterials[CATEGORY0_VECTORS].setDiffuse(new Vector3f(0.6f,0.6f,1.0f));
 		for (int i=0; i < 3; ++i)
 		{
 			final Cylinder sMain = defineVectorShaftMaster();
@@ -194,7 +194,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private Cylinder defineVectorShaftMaster()
 	{
 		final Cylinder refVectorNode_Shaft = factoryForVectorShafts();
-		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		if (fullInstancing)
 			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
@@ -205,7 +205,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private Cone defineVectorHeadMaster()
 	{
 		final Cone refVectorNode_Head = factoryForVectorHeads();
-		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		if (fullInstancing)
 			refVectorNode_Head.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
@@ -223,10 +223,9 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private final Cylinder[][] refVectorShafts = new Cylinder[3][2];
 	private final Cone[][]     refVectorHeads  = new Cone[3][2];
 
-	static final int CATEGORY0_POINTS       = 0;
-	static final int CATEGORY0_LINES        = 1;
-	static final int CATEGORY0_VECTORSHAFTS = 2;
-	static final int CATEGORY0_VECTORHEADS  = 3;
+	static final int CATEGORY0_POINTS  = 0;
+	static final int CATEGORY0_LINES   = 1;
+	static final int CATEGORY0_VECTORS = 2;
 	//
 	static final int CATEGORY1_CELL      = 0;
 	static final int CATEGORY1_CELLDBG   = 1;
@@ -496,11 +495,11 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			final Node nh = n.nodeHead;
 
 			//define the vector
-			ns.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+			ns.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 			ns.setScale(n.auxScale);
 			ns.setPosition(n.base);
 
-			nh.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+			nh.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 			nh.setScale(n.auxScaleHead);
 			nh.setPosition(n.auxHeadBase);
 
