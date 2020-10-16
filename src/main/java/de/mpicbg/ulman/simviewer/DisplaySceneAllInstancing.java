@@ -44,8 +44,6 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
-import de.mpicbg.ulman.simviewer.util.SceneAxesData;
-import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -165,8 +163,6 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	void requestWorldUpdate(boolean force)
 	{
 		scene.updateWorld(true,force);
-		if (axesData != null) axesData.axesData().forEach( (a) -> a.setNeedsUpdate(true) );
-		if (borderData != null) borderData.borderData().forEach( (b) -> b.setNeedsUpdate(true) );
 		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) );
 		lineNodes.values().forEach( (l) -> l.node.setNeedsUpdate(true) );
 		vectorNodes.values().forEach( (v) -> { v.node.setNeedsUpdate(true); v.nodeHead.setNeedsUpdate(true); } );
