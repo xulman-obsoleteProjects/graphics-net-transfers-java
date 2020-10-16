@@ -44,8 +44,6 @@ import de.mpicbg.ulman.simviewer.elements.Point;
 import de.mpicbg.ulman.simviewer.elements.Line;
 import de.mpicbg.ulman.simviewer.elements.Vector;
 import de.mpicbg.ulman.simviewer.elements.VectorSH;
-import de.mpicbg.ulman.simviewer.util.SceneAxesData;
-import de.mpicbg.ulman.simviewer.util.SceneBorderData;
 
 /**
  * Adapted from TexturedCubeJavaExample.java from the scenery project,
@@ -134,7 +132,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 
 		//define a master instances for vector as two instances (of the same material):
 		//the vector shaft (slim Cylinder) and head (Cone)
-		refMaterials[CATEGORY0_VECTORSHAFTS].setDiffuse(new Vector3f(0.6f,0.6f,1.0f));
+		refMaterials[CATEGORY0_VECTORS].setDiffuse(new Vector3f(0.6f,0.6f,1.0f));
 		for (int i=0; i < 3; ++i)
 		{
 			final Cylinder sMain = defineVectorShaftMaster();
@@ -159,87 +157,16 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			cMain.addChild(cAux);
 		}
 	}
-
-	public
-	void CreateDisplayAxes()
-	{
-		//remove any old axes, if they exist at all...
-		RemoveDisplayAxes();
-
-		axesData = new SceneAxesData();
-		axesData.shapeForThisScene(sceneOffset,sceneSize);
-		axesData.setMaterial(refMaterials[CATEGORY0_LINES]);
-
-		axesData.parentNode = defineLineMaster();
-		axesData.parentNode.setName("Scene orientation compass");
-		axesData.parentNode.setVisible(axesShown);
-		axesData.setParentTo(axesData.parentNode);
-
-		final Iterator<Node> axes = axesData.axesData().iterator();
-		Node a = axes.next();
-		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
-		if (fullInstancing)
-			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisRedColor);
-		axesData.parentNode.getInstances().add(a);
-
-		a = axes.next();
-		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
-		if (fullInstancing)
-			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisGreenColor);
-		axesData.parentNode.getInstances().add(a);
-
-		a = axes.next();
-		a.getInstancedProperties().put("ModelMatrix", a::getWorld);
-		if (fullInstancing)
-			a.getInstancedProperties().put("Color", () -> SceneAxesData.axisBlueColor);
-		axesData.parentNode.getInstances().add(a);
-
-		scene.addChild(axesData.parentNode);
-	}
-
-	public
-	void CreateDisplaySceneBorder()
-	{
-		//remove any old border, if it exists at all...
-		RemoveDisplaySceneBorder();
-
-		borderData = new SceneBorderData();
-		borderData.shapeForThisScene(sceneOffset,sceneSize);
-		borderData.setMaterial(refMaterials[CATEGORY0_LINES]);
-
-		borderData.parentNode = defineLineMaster();
-		borderData.parentNode.setName("Scene border frame");
-		borderData.parentNode.setVisible(borderShown);
-		borderData.setParentTo(borderData.parentNode);
-
-		int i=0;
-		for (Node b : borderData.borderData())
-		{
-			b.getInstancedProperties().put("ModelMatrix", b::getWorld);
-			if (fullInstancing)
-			{
-				//NB: follows the pattern of SceneBorderData.setMaterial(palette)
-				if (i < 4)
-					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderBlueColor);
-				else
-					b.getInstancedProperties().put("Color", () -> SceneBorderData.borderRedColor);
-				++i;
-			}
-			borderData.parentNode.getInstances().add(b);
-		}
-
-		scene.addChild(borderData.parentNode);
-	}
 	//----------------------------------------------------------------------------
 
+	@Override
 	void requestWorldUpdate(boolean force)
 	{
-		scene.updateWorld(true,force);
-		if (axesData != null) axesData.axesData().forEach( (a) -> a.setNeedsUpdate(true) );
-		if (borderData != null) borderData.borderData().forEach( (b) -> b.setNeedsUpdate(true) );
-		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) );
+		scene.setNeedsUpdate(true); //to pick up the new scale!
+		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) ); //mark all of them to get "rebuilt"
 		lineNodes.values().forEach( (l) -> l.node.setNeedsUpdate(true) );
 		vectorNodes.values().forEach( (v) -> { v.node.setNeedsUpdate(true); v.nodeHead.setNeedsUpdate(true); } );
+		scene.updateWorld(true,force); //finally: rebuild it now
 	}
 	//----------------------------------------------------------------------------
 
@@ -268,7 +195,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private Cylinder defineVectorShaftMaster()
 	{
 		final Cylinder refVectorNode_Shaft = factoryForVectorShafts();
-		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+		refVectorNode_Shaft.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 		refVectorNode_Shaft.getInstancedProperties().put("ModelMatrix", refVectorNode_Shaft::getModel);
 		if (fullInstancing)
 			refVectorNode_Shaft.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
@@ -279,7 +206,7 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private Cone defineVectorHeadMaster()
 	{
 		final Cone refVectorNode_Head = factoryForVectorHeads();
-		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+		refVectorNode_Head.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 		refVectorNode_Head.getInstancedProperties().put("ModelMatrix", refVectorNode_Head::getModel);
 		if (fullInstancing)
 			refVectorNode_Head.getInstancedProperties().put("Color", () -> new Vector4f(0.5f, 0.5f, 0.5f, 1.f));
@@ -297,10 +224,9 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	private final Cylinder[][] refVectorShafts = new Cylinder[3][2];
 	private final Cone[][]     refVectorHeads  = new Cone[3][2];
 
-	static final int CATEGORY0_POINTS       = 0;
-	static final int CATEGORY0_LINES        = 1;
-	static final int CATEGORY0_VECTORSHAFTS = 2;
-	static final int CATEGORY0_VECTORHEADS  = 3;
+	static final int CATEGORY0_POINTS  = 0;
+	static final int CATEGORY0_LINES   = 1;
+	static final int CATEGORY0_VECTORS = 2;
 	//
 	static final int CATEGORY1_CELL      = 0;
 	static final int CATEGORY1_CELLDBG   = 1;
@@ -570,11 +496,11 @@ public class DisplaySceneAllInstancing extends DisplayScene
 			final Node nh = n.nodeHead;
 
 			//define the vector
-			ns.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+			ns.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 			ns.setScale(n.auxScale);
 			ns.setPosition(n.base);
 
-			nh.setMaterial(refMaterials[CATEGORY0_VECTORSHAFTS]);
+			nh.setMaterial(refMaterials[CATEGORY0_VECTORS]);
 			nh.setScale(n.auxScaleHead);
 			nh.setPosition(n.auxHeadBase);
 
