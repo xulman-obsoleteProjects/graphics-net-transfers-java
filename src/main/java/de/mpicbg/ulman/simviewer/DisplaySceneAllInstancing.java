@@ -162,10 +162,11 @@ public class DisplaySceneAllInstancing extends DisplayScene
 	@Override
 	void requestWorldUpdate(boolean force)
 	{
-		scene.updateWorld(true,force);
-		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) );
+		scene.setNeedsUpdate(true); //to pick up the new scale!
+		pointNodes.values().forEach( (p) -> p.node.setNeedsUpdate(true) ); //mark all of them to get "rebuilt"
 		lineNodes.values().forEach( (l) -> l.node.setNeedsUpdate(true) );
 		vectorNodes.values().forEach( (v) -> { v.node.setNeedsUpdate(true); v.nodeHead.setNeedsUpdate(true); } );
+		scene.updateWorld(true,force); //finally: rebuild it now
 	}
 	//----------------------------------------------------------------------------
 
