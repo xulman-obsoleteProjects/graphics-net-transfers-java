@@ -267,6 +267,6 @@ public class SimViewer implements Command
 	 */
 	public static void main( String... args ) throws Exception
 	{
-	    sc.iview.Main.main();
+	    sc.iview.Main.main(args);
 	}
 }
