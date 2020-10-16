@@ -85,7 +85,7 @@ public class Palette
 			mIdx = rgbToIndex(0.0f, 1.0f, 0.0f);
 			break;
 		case 3:
-			mIdx = rgbToIndex(0.2f, 0.4f, 1.0f); //lighter blue
+			mIdx = rgbToIndex(0.0f, 0.0f, 1.0f);
 			break;
 		case 4:
 			mIdx = rgbToIndex(0.0f, 1.0f, 1.0f);

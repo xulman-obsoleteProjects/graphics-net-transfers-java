@@ -333,8 +333,8 @@ public class NetMessagesProcessor
 			color.z = 0.0f;
 			break;
 		case 3:
-			color.x = 0.2f;
-			color.y = 0.4f;
+			color.x = 0.0f;
+			color.y = 0.0f;
 			color.z = 1.0f;
 			break;
 		case 4:
