@@ -78,10 +78,10 @@ public class SimViewer implements Command
 	private int receivingPort = 8765;
 
 	@Parameter(required = false)
-	private String initSequence = "";
+	private String initSequence = "gG";
 
 	@Parameter(required = false)
-	private boolean addOwnLights = true;
+	private boolean addOwnLights = false;
 
 
 	@Parameter(stepSize = "10", callback = "checkMinX")
