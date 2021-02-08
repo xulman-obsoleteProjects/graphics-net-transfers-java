@@ -294,7 +294,7 @@ public class DisplayScene
 		}
 
 		adaptSceneBBoxAndCentreNode();
-		sceneGlobalCoordCentre.setNeedsUpdate(true);
+		scene.setNeedsUpdate(true);
 
 		if (fixedLightsChoosen != fixedLightsState.NOTUSED)
 		{
@@ -311,15 +311,11 @@ public class DisplayScene
 	private
 	void adaptSceneBBoxAndCentreNode()
 	{
-		scene.setBoundingBox(new OrientedBoundingBox(scene,
-				sceneOffset[0],             sceneOffset[1],             sceneOffset[2],
-				sceneOffset[0]+sceneSize[0],sceneOffset[1]+sceneSize[1],sceneOffset[2]+sceneSize[2] ));
-
-		sceneGlobalCoordCentre.setPosition(new float[]{
-				DsFactor * (sceneOffset[0] + 0.5f*sceneSize[0] -0.5f), //NB: subtract half of the box size
-				DsFactor * (sceneOffset[1] + 0.5f*sceneSize[1] -0.5f),
-				DsFactor * (sceneOffset[2] + 0.5f*sceneSize[2] -0.5f)
-		});
+		final float[] halfBox = new float[]{
+			-DsFactor * (sceneOffset[0] + 0.5f*sceneSize[0]),
+			-DsFactor * (sceneOffset[1] + 0.5f*sceneSize[1]),
+			-DsFactor * (sceneOffset[2] + 0.5f*sceneSize[2]) };
+		scene.setPosition(halfBox);
 	}
 	//----------------------------------------------------------------------------
 
