@@ -296,10 +296,13 @@ public class DisplayScene
 		adaptSceneBBoxAndCentreNode();
 		sceneGlobalCoordCentre.setNeedsUpdate(true);
 
-		fixedLightsState backupLightsState = fixedLightsChoosen;
-		RemoveFixedLightsRamp();
-		CreateFixedLightsRamp();
-		while (ToggleFixedLights() != backupLightsState) ;
+		if (fixedLightsChoosen != fixedLightsState.NOTUSED)
+		{
+			fixedLightsState backupLightsState = fixedLightsChoosen;
+			RemoveFixedLightsRamp();
+			CreateFixedLightsRamp();
+			while (ToggleFixedLights() != backupLightsState) ;
+		}
 
 		if (borderData != null) borderData.shapeForThisScene(sceneOffset,sceneSize);
 		if ( axesData  != null)   axesData.shapeForThisScene(sceneOffset,sceneSize);
@@ -436,10 +439,10 @@ public class DisplayScene
 
 
 	//the state flags of the lights
-	public enum fixedLightsState { NONE, BOTH, FRONT, REAR, CIRCLE }
+	public enum fixedLightsState { NOTUSED, NONE, BOTH, FRONT, REAR, CIRCLE }
 
 	private PointLight[][] fixedLights = null;
-	private fixedLightsState fixedLightsChoosen = fixedLightsState.NONE;
+	private fixedLightsState fixedLightsChoosen = fixedLightsState.NOTUSED;
 
 	public
 	void CreateFixedLightsRamp()
@@ -565,7 +568,7 @@ public class DisplayScene
 	public
 	fixedLightsState ToggleFixedLights()
 	{
-		if (fixedLights == null)
+		if (fixedLights == null && fixedLightsChoosen != fixedLightsState.NOTUSED)
 		{
 			System.out.println("Creating light ramps before turning them on...");
 			CreateFixedLightsRamp();

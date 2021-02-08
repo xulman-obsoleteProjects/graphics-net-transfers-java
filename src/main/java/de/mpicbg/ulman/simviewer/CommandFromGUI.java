@@ -432,16 +432,20 @@ public class CommandFromGUI
 	final JButton btnLightRamps = new JButton();
 	final JButton btnLightRampsDimmer   = new JButton("Make lights dimmer");
 	final JButton btnLightRampsBrighter = new JButton("Make lights brighter");
-	final String btnLightRampsLabel_None  = "Use both light ramps";
-	final String btnLightRampsLabel_Both  = "Use only front light ramp";
-	final String btnLightRampsLabel_Front = "Use only rear light ramp";
-	final String btnLightRampsLabel_Rear  = "Use only circular lights";
-	final String btnLightRampsLabel_Circle = "Use no lights";
+	final String btnLightRampsLabel_NotUsed = "Own lights not available";
+	final String btnLightRampsLabel_None    = "Use both light ramps";
+	final String btnLightRampsLabel_Both    = "Use only front light ramp";
+	final String btnLightRampsLabel_Front   = "Use only rear light ramp";
+	final String btnLightRampsLabel_Rear    = "Use only circular lights";
+	final String btnLightRampsLabel_Circle  = "Use no lights";
 	//
 	private void btnLightRampsSetLabel()
 	{
 		switch (scene.ReportChosenFixedLights())
 		{
+		case NOTUSED:
+			btnLightRamps.setText(btnLightRampsLabel_NotUsed);
+			break;
 		case NONE:
 			btnLightRamps.setText(btnLightRampsLabel_None);
 			break;
