@@ -84,7 +84,6 @@ public class DisplayScene
 
 		adaptSceneBBoxAndCentreNode();
 		sciView.addNode(sceneGlobalCoordCentre);
-		//NB: added as a final op so that sciview shows the current state
 
 		//init the colors -- the material lookup table
 		final Material sampleMat = new Material();
@@ -107,6 +106,13 @@ public class DisplayScene
 		//remove the rest of the SimViewer, which is now only the remaining user's data...
 		sciView.deleteNode(sceneGlobalCoordCentre);
 		sciView.deleteNode(scene);
+	}
+
+	public
+	void refreshInspectorPanel()
+	{
+		//sciView.requestPropEditorRefresh(scene);
+		sciView.mainWindow.rebuildSceneTree(); //TODO, a bit brutal solution for now....
 	}
 
 	public

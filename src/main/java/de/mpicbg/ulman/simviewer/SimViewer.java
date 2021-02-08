@@ -145,8 +145,8 @@ public class SimViewer implements Command
 		scene.CreateDisplayAxes();
 		scene.CreateDisplaySceneBorder();
 
-		//sciView.requestPropEditorRefresh();
-		events.publish(new NodeChangedEvent(scene.sceneGlobalCoordCentre));
+		//make sure sciview's content is up to date
+		scene.refreshInspectorPanel();
 
 		//start aux services:
 		//the shared, messages processor and its "wrapping classes"
@@ -284,6 +284,6 @@ public class SimViewer implements Command
 	 */
 	public static void main( String... args ) throws Exception
 	{
-	    sc.iview.Main.main(args);
+		sc.iview.Main.main(args);
 	}
 }

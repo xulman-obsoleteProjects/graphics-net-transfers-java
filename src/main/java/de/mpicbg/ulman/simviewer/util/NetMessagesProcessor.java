@@ -86,6 +86,7 @@ public class NetMessagesProcessor
 			if (msg.startsWith("v1 tick")) processTickMessage(msg.substring(8));
 			else
 				System.out.println("NetMessagesProcessor: Don't understand this msg: "+msg);
+			scene.refreshInspectorPanel();
 		}
 		catch (java.util.InputMismatchException e) {
 			System.out.println("NetMessagesProcessor: Parsing error: " + e.getMessage());

@@ -258,12 +258,12 @@ public class CommandFromGUI
 
 		//'d'
 		btn = new JButton("Delete not-recently updated objects");
-		btn.addActionListener( (action) -> { scene.garbageCollect(1); } );
+		btn.addActionListener( (action) -> { scene.garbageCollect(1); scene.refreshInspectorPanel(); } );
 		SVbottomButtonsGrid.add(btn);
 
 		//'W'
 		btn = new JButton("Delete all SimViewer's objects");
-		btn.addActionListener( (action) -> { scene.removeAllObjects(); } );
+		btn.addActionListener( (action) -> { scene.removeAllObjects(); scene.refreshInspectorPanel(); } );
 		SVbottomButtonsGrid.add(btn);
 
 		//'D'
