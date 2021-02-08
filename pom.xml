@@ -83,7 +83,7 @@
 		<package-name>de.mpicbg.ulman.simviewer</package-name>
 		<main-class>de.mpicbg.ulman.simviewer</main-class>
 
-		<scenery.version>9d42647</scenery.version>
+		<scenery.version>9747a22</scenery.version>
 		<sciview.version>0.2.0-beta-9-SNAPSHOT</sciview.version>
 	</properties>
 
