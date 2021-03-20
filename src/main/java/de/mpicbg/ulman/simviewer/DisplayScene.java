@@ -469,7 +469,8 @@ public class DisplayScene
 
 		//one light circle around the scene
 		//----------------------------------
-		final int noOfCircleLights = 12;
+		final int noOfCircleLights_mid = 12;
+		final int noOfCircleLights_side = 6;
 		final float yCentre = (sceneOffset[1] + 0.50f*sceneSize[1]) *DsFactor;
 		final float zCentre = (sceneOffset[2] + 0.50f*sceneSize[2]) *DsFactor;
 
@@ -477,7 +478,8 @@ public class DisplayScene
 		final float radius = 1.1f*sceneSize[1] *DsFactor;
 
 		//create the lights, one for each upper corner of the scene
-		fixedLights = new PointLight[][] { new PointLight[6], new PointLight[6], new PointLight[noOfCircleLights] };
+		fixedLights = new PointLight[][] { new PointLight[6], new PointLight[6],
+				new PointLight[2*noOfCircleLights_side + noOfCircleLights_mid] };
 		(fixedLights[0][0] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yTop   ,zNear));
 		(fixedLights[0][1] = new PointLight(radius)).setPosition(new Vector3f(xLeft  ,yBottom,zNear));
 		(fixedLights[0][2] = new PointLight(radius)).setPosition(new Vector3f(xCentre,yTop   ,zNearCentre));
@@ -506,14 +508,31 @@ public class DisplayScene
 		fixedLights[1][4].setName("PointLight Ramp2: x-right, y-bottom, z-far");
 		fixedLights[1][5].setName("PointLight Ramp2: x-right, y-top, z-far");
 
-		for (int i=0; i < noOfCircleLights; ++i)
+		for (int i=0; i < noOfCircleLights_mid; ++i)
 		{
-			final double ang = 2.0 * Math.PI * i / noOfCircleLights;
+			final double ang = 2.0 * Math.PI * i / noOfCircleLights_mid;
+			final double dx = Math.cos(ang) * 0.8 * sceneSize[0] * DsFactor;
+			final double dz = Math.sin(ang) * 0.8 * sceneSize[2] * DsFactor;
+			//
 			(fixedLights[2][i] = new PointLight(radius)).setPosition(
-				new Vector3f( xCentre + (float)(Math.cos(ang) * 0.8 * sceneSize[0] * DsFactor),
-				              yCentre,
-				              zCentre + (float)(Math.sin(ang) * 0.8 * sceneSize[2] * DsFactor) ));
-			fixedLights[2][i].setName("PointLight Circle at "+(360*i/noOfCircleLights)+" deg");
+				new Vector3f( xCentre + (float)dx, yCentre, zCentre + (float)dz ));
+			fixedLights[2][i].setName("PointLight mid-Circle at "+(360*i/noOfCircleLights_mid)+" deg");
+		}
+		final double ang_offset = Math.PI / noOfCircleLights_side;
+		for (int i=0; i < noOfCircleLights_side; ++i)
+		{
+			final double ang = (2.0 * Math.PI * i / noOfCircleLights_side) +ang_offset;
+			final double dx = Math.cos(ang) * 0.4 * sceneSize[0] * DsFactor;
+			final double dz = Math.sin(ang) * 0.4 * sceneSize[2] * DsFactor;
+			final double dy = 0.866 * 0.8 * sceneSize[1] * DsFactor;
+			//
+			(fixedLights[2][noOfCircleLights_mid+ 2*i +0] = new PointLight(radius)).setPosition(
+				new Vector3f( xCentre + (float)dx, yCentre - (float)dy, zCentre + (float)dz ));
+			fixedLights[2][noOfCircleLights_mid+ 2*i +0].setName("PointLight low-Circle at "+((180+360*i)/noOfCircleLights_side)+" deg");
+			//
+			(fixedLights[2][noOfCircleLights_mid+ 2*i +1] = new PointLight(radius)).setPosition(
+				new Vector3f( xCentre + (float)dx, yCentre + (float)dy, zCentre + (float)dz ));
+			fixedLights[2][noOfCircleLights_mid+ 2*i +1].setName("PointLight high-Circle at "+((180+360*i)/noOfCircleLights_side)+" deg");
 		}
 
 		//common settings of all lights

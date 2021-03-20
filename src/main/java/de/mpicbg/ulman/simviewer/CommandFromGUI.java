@@ -436,7 +436,7 @@ public class CommandFromGUI
 	final String btnLightRampsLabel_None    = "Use both light ramps";
 	final String btnLightRampsLabel_Both    = "Use only front light ramp";
 	final String btnLightRampsLabel_Front   = "Use only rear light ramp";
-	final String btnLightRampsLabel_Rear    = "Use only circular lights";
+	final String btnLightRampsLabel_Rear    = "Use only spherical lights";
 	final String btnLightRampsLabel_Circle  = "Use no lights";
 	//
 	private void btnLightRampsSetLabel()
