@@ -29,9 +29,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package de.mpicbg.ulman.simviewer;
 
-import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQException;
+import io.undertow.Handlers;
+import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.ExceptionHandler;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+
+import org.xnio.channels.StreamSourceChannel;
 
 import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
 
@@ -74,58 +82,59 @@ public class CommandFromNetwork implements Runnable
 	private
 	final int listenOnPort;
 
+	private Undertow server;
+
 	//--------------------------------------------
 
 	/** listens on the network and dispatches the commands */
+	@Override
 	public void run()
 	{
+		HttpHandler pathHandlers = Handlers.path().addExactPath("/simViewer", this::handleRequest);
+		// @formatter:off_
+		pathHandlers = Handlers.exceptionHandler(pathHandlers)
+														.addExceptionHandler(InterruptedException.class, this::handleInterruptedException)
+														.addExceptionHandler(Exception.class, this::handleException);
+		// @formatter:on
+		server = Undertow.builder().addHttpListener(listenOnPort,
+			"0.0.0.0").setHandler(pathHandlers).build();
+
 		//start receiver in an infinite loop
 		System.out.println("Network listener: Started on port "+listenOnPort+".");
+		server.start();
+	}
 
-		//init the communication side
-		final ZMQ.Context zmqContext = ZMQ.context(1);
-		ZMQ.Socket socket = null;
-		try {
-			socket = zmqContext.socket(SocketType.PAIR);
-			if (socket == null)
-				throw new Exception("Network listener: Cannot obtain local socket.");
+	private void handleRequest(HttpServerExchange exchange) throws IOException,
+		InterruptedException
+	{
+		ByteBuffer bb = ByteBuffer.allocate(1024);
+		StringBuilder msg = new StringBuilder();
 
-			//port to listen for incoming data
-			//socket.subscribe(new byte[] {});
-			socket.bind("tcp://*:"+listenOnPort);
+		StreamSourceChannel ssch = exchange.getRequestChannel();
+		while (0 <= ssch.read(bb)) {
+			bb.flip();
+			msg.append(String.valueOf(Charset.forName("UTF-8").decode(bb)
+				.array()));
+			bb.clear();
+		}
+		netMsgProcessor.processMsg(msg.toString());
+	}
 
-			//the incoming data buffer
-			String msg;
+	private void handleInterruptedException(HttpServerExchange exchange) {
+		Throwable exc = exchange.getAttachment(ExceptionHandler.THROWABLE);
+		System.out.println("Network listener interrupted: " + exc.getMessage());
+		stopServer();
+	}
 
-			while (true)
-			{
-				msg = socket.recvStr(ZMQ.NOBLOCK);
-				if (msg != null)
-					netMsgProcessor.processMsg(msg);
-				else
-					Thread.sleep(1000);
-			}
-		}
-		catch (ZMQException e) {
-			System.out.println("Network listener crashed with ZeroMQ error: " + e.getMessage());
-		}
-		catch (InterruptedException e) {
-			System.out.println("Network listener interrupted: "+e.getMessage());
-		}
-		catch (Exception e) {
-			System.out.println("Network listener stopped, error: " + e.getMessage());
-			e.printStackTrace();
-		}
-		finally {
-			if (socket != null)
-			{
-				socket.unbind("tcp://*:8765");
-				socket.close();
-			}
-			//zmqContext.close();
-			//zmqContext.term();
+	private void handleException(HttpServerExchange exchange) {
+		Throwable exc = exchange.getAttachment(ExceptionHandler.THROWABLE);
+		System.out.println("Network listener stopped, error: " + exc.getMessage());
+		exc.printStackTrace();
+		stopServer();
+	}
 
-			System.out.println("Network listener: Stopped.");
-		}
+	private void stopServer() {
+		server.stop();
+		System.out.println("Network listener: Stopped.");
 	}
 }
