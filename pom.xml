@@ -68,6 +68,12 @@
 		</contributor>
 	</contributors>
 
+	<mailingLists>
+		<mailingList>
+			<name>NONE</name>
+		</mailingList>
+	</mailingLists>
+
 
 	<scm>
 		<connection>scm:git:git://github.com/xulman/graphics-net-transfers-java</connection>
