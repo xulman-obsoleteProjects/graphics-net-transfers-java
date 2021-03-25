@@ -118,6 +118,7 @@ public class CommandFromNetwork implements Runnable
 			bb.clear();
 		}
 		netMsgProcessor.processMsg(msg.toString());
+		ssch.close();
 	}
 
 	private void handleInterruptedException(HttpServerExchange exchange) {
