@@ -1,0 +1,40 @@
+it is counter part to the client
+
+has to provide interface for users to hook-up their listeners when every single point/sphere, line, vector, tick_message, etc.
+is to be processed
+
+(the server sits on the port, receives messages, unpacks them, and calls the listeners (in a separate thread?) to proces every
+single element it has unpacked
+
+
+there will be 4 protocols:
+existing v1       (uses indexed colors)
+existing v2       (is v1 but uses RGB colors)
+new v3_textual    (is v2 and adds textual_description)
+new v3_binary     (is the same as v3_textual but in binary format -- space economical)
+
+
+textual_description is either
+- _exactly_ 1 Byte with value 0x0000 -- meaning no text is provided
+- _exactly_ 10 Bytes with 7bit ASCII text (plain English) right padded with 0x0000 to the length of 10 Bytes
+
+
+listeners for all protocols
+- richer/newer protocols will ignore elements that are missing in older protocols
+- older protocols will add some default values for listeners designed for richer/newer protocols
+
+example of the protocol:
+https://github.com/xulman/EmbryoGen/blob/master/src/DisplayUnits/SceneryDisplayUnit.cpp
+
+
+transition RGB -> indexed.. for now, return always index 7
+
+transition indexed -> RGB:
+take (index % 7) +1:
+1 -> 255,0,0
+2 -> 0,255,0
+3 -> 0,0,255
+4 -> 0,255,255
+5 -> 255,0,255
+6 -> 255,255,0
+7 -> 200,200,200
