@@ -1,0 +1,17 @@
+create convenience methods to
+- connect to a server (hostname, port)
+- choose whether textual or binary protocol is going to be used, default is binary
+(--> three params c'tor)
+
+- send display element request immediately
+inspiration: https://github.com/xulman/EmbryoGen/blob/de1c617a9698cd308c9485b5c3aa5a514d8bdbc4/src/DisplayUnits/DisplayUnit.h#L12o
+and SceneryDisplayUnit vs. SceneryBufferedDisplayUnit
+protocols: https://github.com/xulman/EmbryoGen/blob/master/src/DisplayUnits/SceneryDisplayUnit.cpp
+
+- buffer display elements requests
+- flush() -- that is to send the buffered stuff //standard name
+- sendBufferedNow() { flush(); } //alias - gives more explanatory name
+
+- send tick message
+
+- close() and disconnect
