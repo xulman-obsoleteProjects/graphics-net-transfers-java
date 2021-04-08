@@ -1,3 +1,4 @@
+
 /**
 BSD 2-Clause License
 
@@ -27,7 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-package de.mpicbg.ulman.simviewer;
+package cz.it4i.ulman.graphics_net_transfers_java.server;
 
 import io.undertow.Handlers;
 import io.undertow.Undertow;
@@ -41,7 +42,8 @@ import java.nio.charset.Charset;
 
 import org.xnio.channels.StreamSourceChannel;
 
-import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
+import lombok.extern.log4j.Log4j2;
+
 
 /**
  * Operates on a network socket and listens for incoming messages.
@@ -54,35 +56,60 @@ import de.mpicbg.ulman.simviewer.util.NetMessagesProcessor;
  *
  * This file was created and is being developed by Vladimir Ulman, 2018.
  */
+@Log4j2
 public class CommandFromNetwork implements Runnable
 {
-	/** constructor to create connection (listening at the 8765 port),
-	    and link it to a shared NetMessagesProcessor (that connects this
-	    'commander' to the displayed window */
-	public CommandFromNetwork(final NetMessagesProcessor nmp)
+
+
+
+	/**
+	 * constructor to create connection (listening at the 8765 port), and link it
+	 * to a shared NetMessagesProcessor (that connects this 'commander' to the
+	 * displayed window
+	 */
+	public CommandFromNetwork(final MessagesProcessor nmp)
 	{
-		netMsgProcessor = nmp;
-		listenOnPort = 8765;
+		this(nmp, 8765);
 	}
 
-	/** constructor to create connection (listening at the given port),
-	    and link it to a shared NetMessagesProcessor (that connects this
-	    'commander' to the displayed window */
-	public CommandFromNetwork(final NetMessagesProcessor nmp, final int _port)
+	/**
+	 * constructor to create connection (listening at the given port), and link it
+	 * to a shared NetMessagesProcessor (that connects this 'commander' to the
+	 * displayed window
+	 */
+	public CommandFromNetwork(final MessagesProcessor nmp, final int _port)
+	{
+		this(nmp, _port, "0.0.0.0");
+	}
+
+	/**
+	 * constructor to create connection (listening at the given port and host
+	 * address), and link it to a shared NetMessagesProcessor (that connects this
+	 * 'commander' to the displayed window
+	 */
+	public CommandFromNetwork(final MessagesProcessor nmp, final int _port,
+		String _host)
 	{
 		netMsgProcessor = nmp;
 		listenOnPort = _port;
+		listenOnAddress = _host;
 	}
+
 
 	/** reference on the messages processor */
 	private
-	final NetMessagesProcessor netMsgProcessor;
+	final MessagesProcessor netMsgProcessor;
 
 	/** the port to listen at */
 	private
 	final int listenOnPort;
 
-	private Undertow server;
+	/**
+	 * host address to listen at.
+	 */
+	private final String listenOnAddress;
+
+
 
 	//--------------------------------------------
 
@@ -90,52 +117,66 @@ public class CommandFromNetwork implements Runnable
 	@Override
 	public void run()
 	{
-		HttpHandler pathHandlers = Handlers.path().addExactPath("/simViewer", this::handleRequest);
-		// @formatter:off_
-		pathHandlers = Handlers.exceptionHandler(pathHandlers)
-														.addExceptionHandler(InterruptedException.class, this::handleInterruptedException)
-														.addExceptionHandler(Exception.class, this::handleException);
-		// @formatter:on
-		server = Undertow.builder().addHttpListener(listenOnPort,
-			"0.0.0.0").setHandler(pathHandlers).build();
+		new ServerHandler(netMsgProcessor, listenOnPort, listenOnAddress);
 
-		//start receiver in an infinite loop
-		System.out.println("Network listener: Started on port "+listenOnPort+".");
-		server.start();
 	}
 
-	private void handleRequest(HttpServerExchange exchange) throws IOException,
+	static private class ServerHandler {
+
+		final MessagesProcessor netMsgProcessor;
+
+		final Undertow server;
+
+		ServerHandler(MessagesProcessor _netMsgProcessor, int _listenOnPort,
+			String _listenOnAddress)
+		{
+			netMsgProcessor = _netMsgProcessor;
+			HttpHandler pathHandlers = Handlers.path().addExactPath("/simViewer",
+				this::handleRequest);
+			// @formatter:off_
+			pathHandlers = Handlers.exceptionHandler(pathHandlers)
+															.addExceptionHandler(InterruptedException.class, this::handleInterruptedException)
+															.addExceptionHandler(Exception.class, this::handleException);
+			// @formatter:on
+			server = Undertow.builder().addHttpListener(_listenOnPort,
+				_listenOnAddress,
+				pathHandlers).build();
+			// start receiver in an infinite loop
+			log.info("Network listener: Started on port {}.", _listenOnPort);
+			server.start();
+		}
+
+		void handleRequest(HttpServerExchange exchange) throws IOException,
 		InterruptedException
 	{
 		ByteBuffer bb = ByteBuffer.allocate(1024);
 		StringBuilder msg = new StringBuilder();
 
-		StreamSourceChannel ssch = exchange.getRequestChannel();
-		while (0 <= ssch.read(bb)) {
-			bb.flip();
-			msg.append(String.valueOf(Charset.forName("UTF-8").decode(bb)
-				.array()));
-			bb.clear();
+		try (StreamSourceChannel ssch = exchange.getRequestChannel()) {
+			while (0 <= ssch.read(bb)) {
+				bb.flip();
+				msg.append(String.valueOf(Charset.forName("UTF-8").decode(bb).array()));
+				bb.clear();
+			}
+			netMsgProcessor.processMsg(msg.toString());
 		}
-		netMsgProcessor.processMsg(msg.toString());
-		ssch.close();
 	}
 
-	private void handleInterruptedException(HttpServerExchange exchange) {
+	void handleInterruptedException(HttpServerExchange exchange) {
 		Throwable exc = exchange.getAttachment(ExceptionHandler.THROWABLE);
-		System.out.println("Network listener interrupted: " + exc.getMessage());
+		log.error("Network listener interrupted: {}", exc.getMessage());
 		stopServer();
 	}
 
-	private void handleException(HttpServerExchange exchange) {
+	void handleException(HttpServerExchange exchange) {
 		Throwable exc = exchange.getAttachment(ExceptionHandler.THROWABLE);
-		System.out.println("Network listener stopped, error: " + exc.getMessage());
-		exc.printStackTrace();
+		log.error("Network listener stopped, error: ", exc);
 		stopServer();
 	}
 
 	private void stopServer() {
 		server.stop();
-		System.out.println("Network listener: Stopped.");
+		log.info("Network listener: Stopped.");
 	}
+}
 }

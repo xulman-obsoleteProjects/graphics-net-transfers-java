@@ -94,8 +94,9 @@
 		<license.copyrightOwners>Vladimír Ulman</license.copyrightOwners>
 		<license.projectName>graphics-net-transfers-java</license.projectName>
 		<package-name>cz.it4i.ulman.graphics-net-transfers-java</package-name>
-
 		<undertow.version>2.0.29.Final</undertow.version>
+		<log4j2.version>2.14.0</log4j2.version>
+		<lombok.version>1.18.12</lombok.version>
 	</properties>
 
 	<repositories>
@@ -114,6 +115,26 @@
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-core</artifactId>
 			<version>${undertow.version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${log4j2.version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${log4j2.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 

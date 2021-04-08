@@ -1,3 +1,4 @@
+
 /*
 BSD 2-Clause License
 
@@ -27,7 +28,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-package de.mpicbg.ulman.simviewer.util;
+
+package cz.it4i.ulman.graphics_net_transfers_java.server;
 
 import java.util.Locale;
 import java.util.Scanner;
