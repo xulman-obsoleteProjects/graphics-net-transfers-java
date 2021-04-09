@@ -8,12 +8,20 @@
 package cz.it4i.ulman.graphics_net_transfers_java.server;
 
 
-public class SimViewProtocolMessagesProcessor implements MessagesProcessor {
+public class ProtocolV3TextMessagesProcessor extends
+	ProtocolV2MessagesProcessor
+{
 
-	@Override
-	public void processMsg(String msg) throws InterruptedException {
-		// TODO Auto-generated method stub
+	public ProtocolV3TextMessagesProcessor() {
+		super();
 
+	}
+
+	private ProtocolV3TextMessagesProcessor(
+		AbstractProtocolMessagesProcessor next, String prefix)
+	{
+		super(next, prefix);
+		// TODO Auto-generated constructor stub
 	}
 
 }
