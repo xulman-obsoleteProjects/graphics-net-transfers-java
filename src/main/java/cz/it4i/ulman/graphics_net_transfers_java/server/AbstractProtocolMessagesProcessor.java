@@ -12,12 +12,7 @@ import com.esotericsoftware.minlog.Log;
 import java.util.Scanner;
 import java.util.function.Function;
 
-import org.joml.Vector3f;
-
-import de.mpicbg.ulman.simviewer.elements.Point;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Setter;
 
 @AllArgsConstructor
 public abstract class AbstractProtocolMessagesProcessor implements
@@ -41,7 +36,9 @@ public abstract class AbstractProtocolMessagesProcessor implements
 
 	}
 
-	private boolean processingMsg(String msg) throws ProcessingException {
+	private boolean processingMsg(String msg) throws ProcessingException,
+		InterruptedException
+	{
 		if (msg.startsWith(prefix)) {
 			Scanner scn = new Scanner(msg);
 			scn.next();
@@ -52,7 +49,7 @@ public abstract class AbstractProtocolMessagesProcessor implements
 
 
 	abstract protected boolean processingMsg(Scanner scn)
-		throws ProcessingException;
+		throws ProcessingException, InterruptedException;
 	
 	@AllArgsConstructor
 	protected static class ProcessingException extends Exception {

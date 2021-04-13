@@ -7,7 +7,10 @@
  ******************************************************************************/
 package cz.it4i.ulman.graphics_net_transfers_java.server;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.function.Consumer;
 
 import org.joml.Vector3f;
 
@@ -20,10 +23,16 @@ public class ProtocolV1MessagesProcessor extends
 	AbstractProtocolMessagesProcessor
 {
 
+	final private Collection<ProtocolMessagesProcessorListener> listeners =
+		new LinkedList<>();
 
 	public ProtocolV1MessagesProcessor()
 	{
 		this(null, "v1");
+	}
+
+	public void addProtocolListener(ProtocolMessagesProcessorListener listener) {
+		listeners.add(listener);
 	}
 
 	protected ProtocolV1MessagesProcessor(
@@ -34,7 +43,9 @@ public class ProtocolV1MessagesProcessor extends
 
 
 	@Override
-	protected boolean processingMsg(Scanner scn) throws ProcessingException {
+	protected boolean processingMsg(Scanner scn) throws ProcessingException,
+		InterruptedException
+	{
 		switch (scn.next()) {
 			case "points":
 				processPoints(scn);
@@ -104,7 +115,7 @@ public class ProtocolV1MessagesProcessor extends
 
 		try {
 			final int N = s.nextInt();
-			startProcessing(N);
+			startProcessingElements(N, Point.class);
 			// is the next token 'dim'?
 			if (s.next("dim").startsWith("dim") == false) {
 				throw new ProcessingException(
@@ -139,7 +150,7 @@ public class ProtocolV1MessagesProcessor extends
 
 				processPoints(ID, p);
 			}
-			endProcessing(N);
+			endProcessingElements(N, Point.class);
 		}
 		finally {
 			s.close();
@@ -150,7 +161,7 @@ public class ProtocolV1MessagesProcessor extends
 		try {
 			final int N = s.nextInt();
 
-			startProcessing(N);
+			startProcessingElements(N, Line.class);
 
 			// is the next token 'dim'?
 			if (s.next("dim").startsWith("dim") == false) {
@@ -194,7 +205,7 @@ public class ProtocolV1MessagesProcessor extends
 				processLines(ID, l);
 			}
 
-			endProcessing(N);
+			endProcessingElements(N, Line.class);
 		}
 		finally {
 			s.close();
@@ -207,7 +218,7 @@ public class ProtocolV1MessagesProcessor extends
 
 			final int N = s.nextInt();
 
-			startProcessing(N);
+			startProcessingElements(N, Vector.class);
 
 			// is the next token 'dim'?
 			if (s.next("dim").startsWith("dim") == false) {
@@ -251,40 +262,35 @@ public class ProtocolV1MessagesProcessor extends
 				processVectors(ID, v);
 			}
 
-			endProcessing(N);
+			endProcessingElements(N, Vector.class);
 		}
 		finally {
 			s.close();
 		}
 	}
 
-	private void processTickMessage(Scanner scn) {
+	private void processTickMessage(Scanner scn) throws InterruptedException {
 		processingTickMessage(scn.nextLine());
 	}
 
-	private void startProcessing(int n) {
-		// TODO Auto-generated method stub
-	
+	private void startProcessingElements(int number, Class<?> type) {
+		applyOnListeners(l -> l.startProcessingElements(number, type));
 	}
 
-	private void endProcessing(int n) {
-		// TODO Auto-generated method stub
-	
+	private void endProcessingElements(int number, Class<?> type) {
+		applyOnListeners(l -> l.endProcessingElements(number, type));
 	}
 
 	private void processPoints(int iD, Point p) {
-		// TODO Auto-generated method stub
-
+		applyOnListeners(l -> l.processPoints(iD, p));
 	}
 
-	private void processLines(int iD, Line l) {
-		// TODO Auto-generated method stub
-	
+	private void processLines(int iD, Line line) {
+		applyOnListeners(l -> l.processLines(iD, line));
 	}
 
 	private void processVectors(int iD, Vector v) {
-		// TODO Auto-generated method stub
-	
+		applyOnListeners(l -> l.processVectors(iD, v));
 	}
 
 	private void processTriangles(Scanner scn) throws ProcessingException {
@@ -294,10 +300,20 @@ public class ProtocolV1MessagesProcessor extends
 	
 	}
 
-	private void processingTickMessage(String nextLine) {
-		// TODO Auto-generated method stub
-	
+	private void processingTickMessage(String nextLine)
+		throws InterruptedException
+	{
+		for (ProtocolMessagesProcessorListener l : listeners) {
+			l.processTickMessage(nextLine);
+		}
 	}
 
+	private void applyOnListeners(
+		Consumer<ProtocolMessagesProcessorListener> consumer)
+	{
+		for (ProtocolMessagesProcessorListener l : listeners) {
+			consumer.accept(l);
+		}
+	}
 
 }

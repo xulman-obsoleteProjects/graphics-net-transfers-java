@@ -13,15 +13,13 @@ public class ProtocolV3TextMessagesProcessor extends
 {
 
 	public ProtocolV3TextMessagesProcessor() {
-		super();
-
+		this(new ProtocolV2MessagesProcessor(), "v3");
 	}
 
 	private ProtocolV3TextMessagesProcessor(
 		AbstractProtocolMessagesProcessor next, String prefix)
 	{
 		super(next, prefix);
-		// TODO Auto-generated constructor stub
 	}
 
 }

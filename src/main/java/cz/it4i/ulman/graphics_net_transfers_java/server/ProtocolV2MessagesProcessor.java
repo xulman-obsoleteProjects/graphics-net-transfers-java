@@ -15,7 +15,6 @@ public class ProtocolV2MessagesProcessor extends ProtocolV1MessagesProcessor {
 
 	public ProtocolV2MessagesProcessor() {
 		this(new ProtocolV1MessagesProcessor(), "v2");
-
 	}
 
 	protected ProtocolV2MessagesProcessor(AbstractProtocolMessagesProcessor next,
