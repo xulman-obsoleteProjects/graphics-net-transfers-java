@@ -7,13 +7,13 @@
  ******************************************************************************/
 package cz.it4i.ulman.graphics_net_transfers_java.server;
 
-import com.esotericsoftware.minlog.Log;
-
 import java.util.Scanner;
 import java.util.function.Function;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 @AllArgsConstructor
 public abstract class AbstractProtocolMessagesProcessor implements
 	MessagesProcessor
@@ -31,7 +31,7 @@ public abstract class AbstractProtocolMessagesProcessor implements
 			}
 		}
 		catch (ProcessingException exc) {
-			Log.info(exc.getText(msg));
+			log.info(exc.getText(msg));
 		}
 
 	}
